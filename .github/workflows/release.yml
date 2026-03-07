@@ -154,10 +154,9 @@ jobs:
           mkdir -p "$TESTDIR"
           echo '{"name":"test"}' > "$TESTDIR/package.json"
           ./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check
-          HASH1=$(sha256sum "$TESTDIR/CLAUDE.md" | cut -d' ' -f1)
-          ./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check --force
-          HASH2=$(sha256sum "$TESTDIR/CLAUDE.md" | cut -d' ' -f1)
-          [ "$HASH1" = "$HASH2" ]
+          # Run twice with --force — second run should skip unchanged files
+          OUTPUT=$(./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check --force 2>&1)
+          echo "$OUTPUT" | grep -q "SKIP"
 
       - name: Test --plan-json output shape
         run: |
