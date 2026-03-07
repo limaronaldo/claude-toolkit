@@ -2,6 +2,18 @@
 
 All notable changes to claude-primer are documented here.
 
+## [1.3.4] — 2026-03-07
+
+### Fixed
+- Windows: PyInstaller binary failed with `UnicodeEncodeError` on cp1252 consoles (box-drawing chars)
+- Windows: PyInstaller binary failed with `Failed to load Python DLL` due to `strip=True` breaking DLLs
+- Docker: multi-arch build failed because PyInstaller can't cross-compile; switched to python:3.12-slim
+- macOS: dropped deprecated macos-13 (Intel) runner from CI matrix
+
+### Changed
+- Release workflow smoke test uses `$RUNNER_TEMP` instead of `/tmp` for Windows compatibility
+- Release workflow sets `PYTHONUTF8=1` for Windows smoke tests
+
 ## [1.3.2] — 2026-03-07
 
 ### Fixed
