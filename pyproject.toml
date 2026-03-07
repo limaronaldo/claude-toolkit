@@ -42,4 +42,4 @@ include = ["super_claude.py", "README.md", "LICENSE"]
 only-include = ["super_claude.py"]
 
 [tool.pytest.ini_options]
-testpaths = ["."]
+testpaths = ["tests"]

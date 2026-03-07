@@ -1,8 +1,17 @@
 __pycache__/
 *.pyc
 *.egg-info/
+*.egg
 dist/
 build/
 .pytest_cache/
 .claude/
-*.egg
+
+# Generated output (tool creates these in target dirs, not source)
+CLAUDE.md
+STANDARDS.md
+QUICKSTART.md
+ERRORS_AND_LESSONS.md
+.claude-setup.rc
+.ralph/
+.ralphrc

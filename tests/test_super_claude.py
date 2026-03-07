@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Tests for claude_setup.py (claude.py)
+Tests for super_claude.py
 
 Regression suite + golden output tests.
-Run: python3 -m pytest test_claude_setup.py -v
+Run: python3 -m pytest tests/ -v
 """
 
 import json
@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).parent / "super_claude.py"
+SCRIPT = Path(__file__).parent.parent / "super_claude.py"
 
 
 def run_setup(*args, cwd=None, timeout=30):
