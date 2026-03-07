@@ -26,10 +26,12 @@ jobs:
             platform: macos
             arch: arm64
             artifact: claude-primer-macos-arm64
-          - os: macos-13
-            platform: macos
-            arch: x86_64
-            artifact: claude-primer-macos-x86_64
+          # macos-13 (Intel) runners deprecated — arm64 binary works via Rosetta 2
+          # Uncomment when GitHub provides a replacement Intel macOS runner
+          # - os: macos-13
+          #   platform: macos
+          #   arch: x86_64
+          #   artifact: claude-primer-macos-x86_64
           - os: windows-latest
             platform: windows
             arch: x86_64
