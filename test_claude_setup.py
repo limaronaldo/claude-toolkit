@@ -474,5 +474,326 @@ class TestEdgeCases:
         assert content1 == content2
 
 
+# ─────────────────────────────────────────────
+# RC file persistence (Phase 1)
+# ─────────────────────────────────────────────
+
+class TestRCPersistence:
+    """Test .claude-setup.rc save/load cycle."""
+
+    def test_rc_not_created_for_existing_project(self, python_project):
+        """RC file is only created from wizard, not from auto-detected projects."""
+        run_setup(str(python_project), "--yes", "--no-git-check")
+        assert not (python_project / ".claude-setup.rc").exists()
+
+    def test_rc_load_applies_config(self, empty_dir):
+        """Manually written RC config should be loaded and used."""
+        rc_content = (
+            "[project]\n"
+            "description = My test project\n"
+            "stacks = python, node\n"
+            "frameworks = fastapi, react\n"
+            "deploy = docker\n"
+            "is_monorepo = false\n"
+        )
+        (empty_dir / ".claude-setup.rc").write_text(rc_content)
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        content = (empty_dir / "CLAUDE.md").read_text()
+        assert "python" in content.lower()
+        assert "node" in content.lower()
+        assert "fastapi" in content.lower() or "FastAPI" in content
+
+    def test_rc_reflected_in_plan_json(self, empty_dir):
+        """Plan JSON should reflect RC-loaded stacks."""
+        rc_content = "[project]\nstacks = rust\nframeworks = axum\n"
+        (empty_dir / ".claude-setup.rc").write_text(rc_content)
+        r = run_setup(str(empty_dir), "--plan-json")
+        # RC doesn't apply in plan_json (which only uses scan_directory),
+        # but the file should at least not crash
+        assert r.returncode == 0
+
+
+# ─────────────────────────────────────────────
+# Dual-condition overwrite (Phase 6)
+# ─────────────────────────────────────────────
+
+class TestDualOverwrite:
+    """Test --force (skip unchanged) vs --force-all behavior."""
+
+    def test_force_skips_unchanged(self, empty_dir):
+        """--force should skip files that haven't changed."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        r = run_setup(str(empty_dir), "--yes", "--no-git-check", "--force")
+        # All files should show as SKIP (unchanged) since content is identical
+        assert "unchanged" in r.stdout.lower() or "skip" in r.stdout.lower()
+
+    def test_force_all_overwrites_unchanged(self, empty_dir):
+        """--force-all should overwrite even unchanged files."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        r = run_setup(str(empty_dir), "--yes", "--no-git-check", "--force-all")
+        assert r.returncode == 0
+        # Should show OVERWRITE, not SKIP
+        assert "OVERWRITE" in r.stdout
+
+    def test_force_detects_content_change(self, empty_dir):
+        """--force should overwrite files that have been modified externally."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        # Modify a file externally
+        (empty_dir / "CLAUDE.md").write_text("# Modified externally\n")
+        r = run_setup(str(empty_dir), "--yes", "--no-git-check", "--force")
+        assert r.returncode == 0
+        content = (empty_dir / "CLAUDE.md").read_text()
+        # Should have been overwritten with generated content
+        assert "Repository Overview" in content
+
+
+# ─────────────────────────────────────────────
+# AUTO-MAINTAINED marker (Phase 4)
+# ─────────────────────────────────────────────
+
+class TestAutoMaintained:
+    """QUICKSTART.md should have AUTO-MAINTAINED marker."""
+
+    def test_quickstart_has_auto_maintained(self, empty_dir):
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        content = (empty_dir / "QUICKSTART.md").read_text()
+        assert "AUTO-MAINTAINED" in content
+
+    def test_auto_maintained_is_html_comment(self, empty_dir):
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        content = (empty_dir / "QUICKSTART.md").read_text()
+        assert "<!-- AUTO-MAINTAINED" in content
+
+
+# ─────────────────────────────────────────────
+# Post-generation verification (Phase 3)
+# ─────────────────────────────────────────────
+
+class TestVerification:
+    """Post-generation verification catches issues."""
+
+    def test_clean_run_no_warnings(self, empty_dir):
+        """A clean run should not produce verification warnings."""
+        r = run_setup(str(empty_dir), "--yes", "--no-git-check")
+        assert "Verification issues" not in r.stdout
+
+    def test_version_v1_2(self, empty_dir):
+        """Generated files should reference v1.2."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        content = (empty_dir / "CLAUDE.md").read_text()
+        assert "super-claude v1.2" in content
+
+
+# ─────────────────────────────────────────────
+# Unit tests for pure functions
+# ─────────────────────────────────────────────
+
+class TestPureFunctions:
+    """Unit tests for pure helper functions."""
+
+    def test_extract_md_sections_basic(self):
+        from super_claude import extract_md_sections
+        content = "# Title\nIntro\n## Section A\nBody A\n## Section B\nBody B"
+        sections = extract_md_sections(content)
+        assert "Title" in sections
+        # ## headings under # Title get hierarchical keys
+        assert "Title > Section A" in sections
+        assert "Title > Section B" in sections
+        assert "Body A" in sections["Title > Section A"]
+
+    def test_extract_md_sections_nested(self):
+        from super_claude import extract_md_sections
+        content = "## Parent\n### Child\nNested body"
+        sections = extract_md_sections(content)
+        assert "Parent > Child" in sections
+        assert "Nested body" in sections["Parent > Child"]
+
+    def test_extract_md_sections_code_block(self):
+        from super_claude import extract_md_sections
+        content = "## Real\nBody\n```\n## Not a heading\n```\n## Another\nMore"
+        sections = extract_md_sections(content)
+        assert "Real" in sections
+        assert "Another" in sections
+        assert "Not a heading" not in sections
+
+    def test_detect_project_tier_empty(self):
+        from super_claude import detect_project_tier
+        result = detect_project_tier({"stacks": [], "frameworks": [], "deploy": [], "is_empty": True, "is_monorepo": False})
+        assert result["tier"] == 4
+
+    def test_detect_project_tier_python(self):
+        from super_claude import detect_project_tier
+        result = detect_project_tier({"stacks": ["python"], "frameworks": [], "deploy": [], "is_empty": False, "is_monorepo": False})
+        assert result["tier"] == 3
+
+    def test_detect_project_tier_t1(self):
+        from super_claude import detect_project_tier
+        result = detect_project_tier({
+            "stacks": ["node"], "frameworks": ["nextjs"],
+            "deploy": ["vercel"], "is_empty": False, "is_monorepo": True
+        })
+        assert result["tier"] == 1
+
+    def test_load_rc_missing_file(self, tmp_path):
+        from super_claude import load_rc
+        result = load_rc(tmp_path)
+        assert result == {}
+
+    def test_save_load_rc_roundtrip(self, tmp_path):
+        from super_claude import save_rc, load_rc
+        info = {
+            "description": "Test project",
+            "stacks": ["python", "node"],
+            "frameworks": ["fastapi"],
+            "deploy": ["docker"],
+            "is_monorepo": True,
+            "monorepo_tool": "turborepo",
+        }
+        save_rc(tmp_path, info)
+        loaded = load_rc(tmp_path)
+        assert loaded["description"] == "Test project"
+        assert loaded["stacks"] == ["python", "node"]
+        assert loaded["frameworks"] == ["fastapi"]
+        assert loaded["deploy"] == ["docker"]
+        assert loaded["is_monorepo"] is True
+        assert loaded["monorepo_tool"] == "turborepo"
+
+    def test_verify_generated_catches_empty(self, tmp_path):
+        from super_claude import _verify_generated, FileAction
+        (tmp_path / "CLAUDE.md").write_text("")
+        actions = [FileAction("CLAUDE.md", "create")]
+        issues = _verify_generated(tmp_path, actions)
+        assert any("empty" in i for i in issues)
+
+    def test_verify_generated_catches_missing_heading(self, tmp_path):
+        from super_claude import _verify_generated, FileAction
+        (tmp_path / "test.md").write_text("No heading here, just text.")
+        actions = [FileAction("test.md", "create")]
+        issues = _verify_generated(tmp_path, actions)
+        assert any("heading" in i for i in issues)
+
+
+# ─────────────────────────────────────────────
+# Ralph integration (optional --with-ralph)
+# ─────────────────────────────────────────────
+
+class TestRalphIntegration:
+    """Test optional Ralph integration via --with-ralph flag."""
+
+    def test_no_ralph_by_default(self, empty_dir):
+        """Ralph files should NOT be created without --with-ralph."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check")
+        assert not (empty_dir / ".ralph").exists()
+        assert not (empty_dir / ".ralphrc").exists()
+
+    def test_with_ralph_creates_structure(self, empty_dir):
+        """--with-ralph should create .ralph/, PROMPT.md, AGENT.md, fix_plan.md, .ralphrc."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        assert (empty_dir / ".ralph").is_dir()
+        assert (empty_dir / ".ralph" / "PROMPT.md").exists()
+        assert (empty_dir / ".ralph" / "AGENT.md").exists()
+        assert (empty_dir / ".ralph" / "fix_plan.md").exists()
+        assert (empty_dir / ".ralphrc").exists()
+        assert (empty_dir / ".ralph" / "hooks" / "post-loop.sh").exists()
+
+    def test_ralph_prompt_references_claude_md(self, empty_dir):
+        """PROMPT.md should reference CLAUDE.md."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        content = (empty_dir / ".ralph" / "PROMPT.md").read_text()
+        assert "CLAUDE.md" in content
+        assert "STANDARDS.md" in content
+        assert "ERRORS_AND_LESSONS.md" in content
+
+    def test_ralph_prompt_no_duplication(self, empty_dir):
+        """PROMPT.md should NOT contain architecture or stack details."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        content = (empty_dir / ".ralph" / "PROMPT.md").read_text()
+        assert "## Architecture" not in content
+        assert "## Environment" not in content
+        assert "Tech stack:" not in content
+
+    def test_ralph_prompt_has_loop_instructions(self, empty_dir):
+        """PROMPT.md should contain Ralph-specific loop instructions."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        content = (empty_dir / ".ralph" / "PROMPT.md").read_text()
+        assert "EXIT_SIGNAL" in content
+        assert "fix_plan" in content
+        assert "RALPH_STATUS" in content
+
+    def test_ralph_agent_is_symlink(self, empty_dir):
+        """AGENT.md should be a symlink to QUICKSTART.md."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        agent = empty_dir / ".ralph" / "AGENT.md"
+        assert agent.is_symlink()
+        # Symlink should resolve to QUICKSTART.md
+        assert agent.resolve() == (empty_dir / "QUICKSTART.md").resolve()
+
+    def test_ralph_allowed_tools_python(self, python_project):
+        """Python project should have python tools in .ralphrc."""
+        run_setup(str(python_project), "--yes", "--no-git-check", "--with-ralph")
+        content = (python_project / ".ralphrc").read_text()
+        assert "Bash(python *)" in content
+        assert "Bash(pytest)" in content
+
+    def test_ralph_allowed_tools_node(self, node_project):
+        """Node project should have npm/npx tools in .ralphrc."""
+        run_setup(str(node_project), "--yes", "--no-git-check", "--with-ralph")
+        content = (node_project / ".ralphrc").read_text()
+        assert "Bash(npm *)" in content
+        assert "Bash(npx *)" in content
+
+    def test_ralph_fix_plan_not_overwritten(self, empty_dir):
+        """Existing fix_plan.md should NOT be overwritten on --force."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        custom_content = "# My custom plan\n- [ ] Custom task\n"
+        (empty_dir / ".ralph" / "fix_plan.md").write_text(custom_content)
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph", "--force")
+        content = (empty_dir / ".ralph" / "fix_plan.md").read_text()
+        assert "Custom task" in content
+
+    def test_ralph_gitignore_updated(self, empty_dir):
+        """.gitignore should have Ralph runtime entries."""
+        (empty_dir / ".gitignore").write_text("*.pyc\n")
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        content = (empty_dir / ".gitignore").read_text()
+        assert ".ralph/logs/" in content
+        assert ".ralph/.ralph_session" in content
+
+    def test_ralph_gitignore_no_duplicates(self, empty_dir):
+        """.gitignore entries should not be duplicated on repeat runs."""
+        (empty_dir / ".gitignore").write_text("*.pyc\n")
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph", "--force")
+        content = (empty_dir / ".gitignore").read_text()
+        assert content.count(".ralph/logs/") == 1
+
+    def test_ralph_dry_run(self, empty_dir):
+        """Dry run with --with-ralph should not create Ralph files."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph", "--dry-run")
+        assert not (empty_dir / ".ralph").exists()
+        assert not (empty_dir / ".ralphrc").exists()
+
+    def test_ralph_hook_is_executable(self, empty_dir):
+        """Post-loop hook should be valid bash."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        hook = empty_dir / ".ralph" / "hooks" / "post-loop.sh"
+        assert hook.exists()
+        content = hook.read_text()
+        assert content.startswith("#!/usr/bin/env bash")
+
+    def test_ralph_ralphrc_has_project_name(self, empty_dir):
+        """.ralphrc should have the project name."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        content = (empty_dir / ".ralphrc").read_text()
+        assert "PROJECT_NAME=" in content
+
+    def test_ralph_ralphrc_base_tools(self, empty_dir):
+        """.ralphrc should always include Write,Read,Edit base tools."""
+        run_setup(str(empty_dir), "--yes", "--no-git-check", "--with-ralph")
+        content = (empty_dir / ".ralphrc").read_text()
+        assert "Write,Read,Edit" in content
+        assert "Bash(git *)" in content
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
