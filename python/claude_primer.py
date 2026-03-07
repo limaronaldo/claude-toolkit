@@ -2894,6 +2894,13 @@ def plan_json(target: Path, with_readme: bool = False) -> dict:
 
 
 def main():
+    # Ensure UTF-8 output on Windows (cp1252 can't encode box-drawing chars)
+    import sys
+    if sys.stdout.encoding and sys.stdout.encoding.lower().replace("-", "") != "utf8":
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
     parser = argparse.ArgumentParser(
         description="Bootstrap Claude Code Knowledge Architecture in a project directory.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
