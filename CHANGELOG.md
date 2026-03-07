@@ -2,6 +2,21 @@
 
 All notable changes to claude-primer are documented here.
 
+## [1.4.0] — 2026-03-07
+
+### Added
+- **Confidence-aware extraction** — `ScoredValue` dataclass tracks `(value, source, confidence)` for every extracted field; `--plan-json` now includes `confidence_scores`
+- **Template system** — `.claude-primer/templates/` directory for section-level overrides with `{{variable}}` substitution; templates survive `--force` runs
+- **Watch mode** — `--watch` flag monitors source files and regenerates docs on change; configurable with `--watch-interval` and `--watch-auto`
+- **Multi-agent context output** — `--agent` flag generates context files for Cursor (`.cursor/rules/project.mdc`), Copilot (`.github/copilot-instructions.md`), Windsurf (`.windsurfrules`), Aider (`.aider/conventions.md`), and Codex (`AGENTS.md`); supports `--agent all`
+- Full feature parity between Python and npm CLIs for all new capabilities
+
+### Fixed
+- Intel macOS binary now builds on `macos-15-intel` runner (replaced deprecated `macos-13`)
+- Stale `v1.2` version strings replaced with `__version__` constant across Python and npm
+- `--force` no longer skips files when only template overrides changed (diff check moved after template merge)
+- npm `--plan-json` now includes `confidence_scores` matching Python output
+
 ## [1.3.4] — 2026-03-07
 
 ### Fixed
