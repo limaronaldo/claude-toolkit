@@ -3619,7 +3619,7 @@ Examples:
     if args.plan_json:
         result = plan_json(Path(args.target), with_readme=args.with_readme)
         print(json.dumps(result, indent=2))
-        _send_telemetry_if_enabled(args, {}, _time.monotonic() - _t0)
+        _send_telemetry_if_enabled(args, result, _time.monotonic() - _t0)
         return
 
     # Parse agent list
@@ -3649,6 +3649,9 @@ Examples:
             force_all=args.force_all,
             clean_root=args.clean_root,
             template_dir=args.template_dir,
+            agents=agents,
+            output_format=args.format,
+            plugin_dir=args.plugin_dir,
         )
         return
 
@@ -3681,7 +3684,8 @@ Examples:
         plugin_dir=args.plugin_dir,
     )
 
-    _send_telemetry_if_enabled(args, {}, _time.monotonic() - _t0)
+    _telemetry_info = scan_directory(Path(args.target).resolve()) if Path(args.target).exists() else {}
+    _send_telemetry_if_enabled(args, _telemetry_info, _time.monotonic() - _t0)
 
 
 def _collect_telemetry(args, info: dict, duration_s: float) -> dict:

@@ -3487,7 +3487,7 @@ async function main() {
   if (args.planJsonFlag) {
     const result = planJson(args.target, args.withReadme);
     console.log(JSON.stringify(result, null, 2));
-    sendTelemetryIfEnabled(args, {}, Date.now() - _t0);
+    sendTelemetryIfEnabled(args, result, Date.now() - _t0);
     return;
   }
 
@@ -3520,6 +3520,9 @@ async function main() {
       forceAll: args.forceAll,
       cleanRoot: args.cleanRoot,
       templateDir: args.templateDir,
+      agents,
+      outputFormat: args.format,
+      pluginDir: args.pluginDir,
     });
     return;
   }
@@ -3552,7 +3555,8 @@ async function main() {
     pluginDir: args.pluginDir,
   });
 
-  sendTelemetryIfEnabled(args, {}, Date.now() - _t0);
+  const _telemetryInfo = fs.existsSync(path.resolve(args.target)) ? scanDirectory(path.resolve(args.target)) : {};
+  sendTelemetryIfEnabled(args, _telemetryInfo, Date.now() - _t0);
 }
 
 main().catch((err) => {
