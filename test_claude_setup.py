@@ -461,7 +461,6 @@ class TestEdgeCases:
         data = json.loads(r.stdout)
         assert "CLAUDE.md" in data["existing_docs"]
 
-    @pytest.mark.xfail(reason="Known: extraction re-accumulates on each --force pass (Phase 6 fix)")
     def test_idempotent_with_force(self, empty_dir):
         """Running with --force twice on existing files should produce same content."""
         # First run creates files
