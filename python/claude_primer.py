@@ -35,7 +35,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Optional
 
-__version__ = "1.5.1"
+__version__ = "1.6.0"
 
 # ─────────────────────────────────────────────
 # Constants

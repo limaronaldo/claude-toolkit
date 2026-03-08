@@ -2,6 +2,16 @@
 
 All notable changes to claude-primer are documented here.
 
+## [1.6.0] — 2026-03-08
+
+### Added
+- **`--diff` mode** — show unified diff of what would change without writing files; compare generated content against existing files
+- **`.claude-primer.toml` config file** — persist CLI flag defaults in a `[flags]` section; CLI flags always override TOML values
+- **npm test parity** — 138 npm tests (up from 110), covering confidence scoring, templates, watch mode, multi-agent output, plugins, telemetry, diff, and TOML config
+
+### Fixed
+- Release CI now skips npm/PyPI publish when version already exists (no more false 403 failures on re-runs)
+
 ## [1.5.1] — 2026-03-08
 
 ### Fixed
