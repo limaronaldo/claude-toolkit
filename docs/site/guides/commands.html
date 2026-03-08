@@ -133,6 +133,15 @@ claude-primer --check --no-git-check</code></pre>
   STALE   QUICKSTART.md
   MISSING ERRORS_AND_LESSONS.md
   2 file(s) stale or missing.</code></pre>
+                    <p>
+                        <strong>v1.8.1 improvement:</strong> The comparison
+                        now normalizes volatile fields (dates, directory
+                        structure, provenance sections) and clears
+                        existing content before diffing, preventing
+                        self-referential migration artifacts. This means
+                        <code>--check</code> reliably reports "up-to-date"
+                        for freshly generated files.
+                    </p>
 
                     <h2>--export</h2>
                     <p>
