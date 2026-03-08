@@ -429,6 +429,13 @@ tr:last-child td {
   transform: translateY(-2px);
 }
 
+.bento-card h3 {
+  margin-top: 0;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
 .bento-card p {
   font-size: 1rem;
 }
