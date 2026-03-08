@@ -63,23 +63,36 @@ h1 {
   letter-spacing: -0.03em;
 }
 
-h2.section-title {
-  font-size: 2.5rem;
-  margin-top: 4rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+h2, h2.section-title {
+  font-size: 2.2rem;
+  margin-top: 3.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border-color);
 }
 
 h3 {
   font-size: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
   color: var(--text-primary);
 }
 
 p {
   color: var(--text-muted);
   font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+ul, ol {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  margin-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
 }
 
 a {
@@ -316,14 +329,34 @@ a:hover {
 }
 
 pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   padding: 1.5rem;
   overflow-x: auto;
+  margin: 2rem 0;
+}
+
+.code-block pre {
+  margin: 0;
+  border: none;
+  border-radius: 0;
 }
 
 code {
   font-family: var(--font-mono);
   font-size: 0.95rem;
   color: var(--text-primary);
+}
+
+p code,
+li code,
+td code {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.85em;
+  color: #EED7C5; /* softer accent color for inline code */
 }
 
 .comment {
