@@ -2,6 +2,22 @@
 
 All notable changes to claude-primer are documented here.
 
+## [1.8.0] — 2026-03-08
+
+### Added
+- **`--check`** — validate if generated docs are up-to-date; exits with code 1 if stale (CI-friendly)
+- **`--export`** — bundle generated docs into a tar.gz, zip, or combined markdown file
+- **`--from-doc` URL support** — bootstrap from a remote document URL (fetches and parses)
+- **Custom output formats** — `--format json` and `--format yaml` emit structured knowledge files
+- **Workspace config inheritance** — `.claude-primer.toml` in parent directories applies as defaults to subdirectories
+- **GitHub Action v2** — outputs `files-changed` and `plan-json`; `check-only` mode for CI validation
+- **Pre-commit hook** — `claude-primer-check` hook for pre-commit framework
+- **JetBrains plugin** — stub with Generate, Dry Run, Diff, and Check actions
+- **Property-based tests** — 5 randomized test scenarios for core invariants
+- **Benchmark script** — measures startup and generation timing across project sizes
+- **Community files** — issue templates (bug report + feature request), CONTRIBUTING.md, CODE_OF_CONDUCT.md
+- **README badges** — PyPI, npm, GitHub Release, License, Docker
+
 ## [1.7.0] — 2026-03-08
 
 ### Added

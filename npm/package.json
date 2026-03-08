@@ -1,6 +1,6 @@
 {
   "name": "claude-primer",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Prime your repo for Claude Code with context-aware knowledge architecture",
   "type": "module",
   "bin": { "claude-primer": "index.mjs" },

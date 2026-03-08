@@ -35,7 +35,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Optional
 
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 
 # ─────────────────────────────────────────────
 # Constants
@@ -457,6 +457,49 @@ def run_git_safety(target: Path, git_mode: str, files_to_write: list[str], inter
 
 
 # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────
+# Simple YAML serializer (avoids PyYAML dependency)
+# ─────────────────────────────────────────────
+
+def _yaml_escape_scalar(value: str) -> str:
+    """Escape a simple scalar value for YAML output."""
+    if not value:
+        return '""'
+    # If value contains special chars or looks like a number/bool, quote it
+    if any(c in value for c in (':', '#', '{', '}', '[', ']', ',', '&', '*', '?', '|', '-', '<', '>', '=', '!', '%', '@', '`', '"', "'")):
+        escaped = value.replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{escaped}"'
+    if value.lower() in ('true', 'false', 'null', 'yes', 'no', 'on', 'off'):
+        return f'"{value}"'
+    return value
+
+
+def _dict_to_yaml(data: dict, indent: int = 0) -> str:
+    """Convert a dict to YAML string without requiring PyYAML.
+
+    Handles nested dicts, lists of simple values, multiline strings,
+    and simple scalar values. Not a full YAML serializer — just enough
+    for the structured output format used by claude-primer.
+    """
+    lines = []
+    prefix = "  " * indent
+    for key, value in data.items():
+        if isinstance(value, dict):
+            lines.append(f"{prefix}{key}:")
+            lines.append(_dict_to_yaml(value, indent + 1))
+        elif isinstance(value, list):
+            lines.append(f"{prefix}{key}:")
+            for item in value:
+                lines.append(f"{prefix}  - {_yaml_escape_scalar(str(item))}")
+        elif isinstance(value, str) and "\n" in value:
+            lines.append(f"{prefix}{key}: |")
+            for line in value.split("\n"):
+                lines.append(f"{prefix}  {line}")
+        else:
+            lines.append(f"{prefix}{key}: {_yaml_escape_scalar(str(value))}")
+    return "\n".join(lines)
+
+
 # Deep content reader
 # ─────────────────────────────────────────────
 
@@ -2830,9 +2873,26 @@ def run(target: Path, dry_run: bool = False, force: bool = False,
 
     # ── Import from external document ──
     if from_doc:
-        doc_path = Path(from_doc)
-        if not doc_path.is_absolute():
-            doc_path = target / doc_path
+        doc_path = from_doc
+        if doc_path.startswith("http://") or doc_path.startswith("https://"):
+            import urllib.request
+            import tempfile
+            try:
+                req = urllib.request.Request(doc_path, headers={"User-Agent": "claude-primer"})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    doc_content = resp.read().decode("utf-8")
+            except Exception as e:
+                print(f"  Error fetching {doc_path}: {e}")
+                sys.exit(1)
+            # Write fetched content to a temp file so extract_from_document can read it
+            tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False)
+            tmp.write(doc_content)
+            tmp.close()
+            doc_path = Path(tmp.name)
+        else:
+            doc_path = Path(doc_path)
+            if not doc_path.is_absolute():
+                doc_path = target / doc_path
         doc_data = extract_from_document(doc_path)
         ec = info.get("existing_content", {})
         if not ec:
@@ -2966,33 +3026,77 @@ def run(target: Path, dry_run: bool = False, force: bool = False,
     # Cache content that was already generated during write plan diff check
     _content_cache = {}
 
-    # Create .claude/docs/ directory if needed for clean_root
-    if clean_root and not dry_run:
-        docs_dir = target / ".claude" / "docs"
-        docs_dir.mkdir(parents=True, exist_ok=True)
+    # ── Structured output (JSON / YAML) ──
+    if output_format in ("json", "yaml"):
+        # Generate all content in memory
+        all_content = {}
+        for pw in write_plan:
+            content = _content_cache.get(pw.filename) or generators[pw.filename](info)
+            if user_templates:
+                content = merge_with_templates(content, user_templates, info.get("_template_vars", {}), pw.filename)
+            all_content[pw.filename] = content
 
-    for pw in write_plan:
-        if pw.mode == "skip":
-            result.actions.append(FileAction(pw.filename, "skip", reason=pw.reason))
-            continue
+        # Build structured data
+        tier_info = info.get("tier", {})
+        structured = {
+            "version": __version__,
+            "project": {
+                "name": info.get("name", ""),
+                "stacks": info.get("stacks", []),
+                "frameworks": info.get("frameworks", []),
+                "tier": f"T{tier_info.get('tier', '?')}" if isinstance(tier_info, dict) else str(tier_info),
+                "languages": info.get("languages", []),
+            },
+            "architecture": all_content.get("CLAUDE.md", ""),
+            "standards": all_content.get("STANDARDS.md", ""),
+            "quickstart": all_content.get("QUICKSTART.md", ""),
+            "errors_and_lessons": all_content.get("ERRORS_AND_LESSONS.md", ""),
+        }
 
-        # Reuse cached content from diff check, or generate fresh
-        if pw.filename in _content_cache:
-            content = _content_cache[pw.filename]
+        if output_format == "json":
+            out_file = target / "claude-primer.json"
+            out_text = json.dumps(structured, indent=2, ensure_ascii=False)
         else:
-            content = generators[pw.filename](info)
-        # Apply user template overrides
-        if user_templates:
-            content = merge_with_templates(content, user_templates, info.get("_template_vars", {}), pw.filename)
-        line_count = content.count("\n")
+            out_file = target / "claude-primer.yaml"
+            out_text = _dict_to_yaml(structured)
 
-        # Use actual_path (respects clean_root placement)
-        write_path = pw.actual_path if pw.actual_path else target / pw.filename
         if not dry_run:
-            write_path.parent.mkdir(parents=True, exist_ok=True)
-            write_path.write_text(content, encoding="utf-8")
+            out_file.parent.mkdir(parents=True, exist_ok=True)
+            out_file.write_text(out_text, encoding="utf-8")
 
-        result.actions.append(FileAction(pw.filename, pw.mode, lines=line_count))
+        line_count = out_text.count("\n")
+        result.actions.append(FileAction(out_file.name, "create", lines=line_count))
+
+    else:
+        # ── Markdown output (default) ──
+
+        # Create .claude/docs/ directory if needed for clean_root
+        if clean_root and not dry_run:
+            docs_dir = target / ".claude" / "docs"
+            docs_dir.mkdir(parents=True, exist_ok=True)
+
+        for pw in write_plan:
+            if pw.mode == "skip":
+                result.actions.append(FileAction(pw.filename, "skip", reason=pw.reason))
+                continue
+
+            # Reuse cached content from diff check, or generate fresh
+            if pw.filename in _content_cache:
+                content = _content_cache[pw.filename]
+            else:
+                content = generators[pw.filename](info)
+            # Apply user template overrides
+            if user_templates:
+                content = merge_with_templates(content, user_templates, info.get("_template_vars", {}), pw.filename)
+            line_count = content.count("\n")
+
+            # Use actual_path (respects clean_root placement)
+            write_path = pw.actual_path if pw.actual_path else target / pw.filename
+            if not dry_run:
+                write_path.parent.mkdir(parents=True, exist_ok=True)
+                write_path.write_text(content, encoding="utf-8")
+
+            result.actions.append(FileAction(pw.filename, pw.mode, lines=line_count))
 
     # ── Post-generation verification ──
     if not dry_run and result.created_count > 0:
@@ -3726,26 +3830,47 @@ def _run_export(target: Path, args):
 TOML_CONFIG_FILE = ".claude-primer.toml"
 
 def _load_toml_config(target: Path) -> dict:
-    """Load .claude-primer.toml from target directory. Returns empty dict if absent."""
-    config_path = target.resolve() / TOML_CONFIG_FILE if target != Path(".") else Path(TOML_CONFIG_FILE)
-    if target == Path("."):
-        config_path = Path.cwd() / TOML_CONFIG_FILE
-    else:
-        config_path = target.resolve() / TOML_CONFIG_FILE
-    if not config_path.exists():
+    """Load .claude-primer.toml, walking up directories for inheritance."""
+    target = target.resolve() if target != Path(".") else Path.cwd()
+
+    configs = []
+    current = target
+    # Walk up to find all config files (stop at filesystem root)
+    while True:
+        config_path = current / TOML_CONFIG_FILE
+        if config_path.exists():
+            try:
+                try:
+                    import tomllib
+                except ImportError:
+                    try:
+                        import tomli as tomllib
+                    except ImportError:
+                        break
+                with open(config_path, "rb") as f:
+                    configs.append(tomllib.load(f))
+            except Exception:
+                pass
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+
+    if not configs:
         return {}
-    try:
-        import tomllib
-    except ImportError:
-        try:
-            import tomli as tomllib  # Python < 3.11
-        except ImportError:
-            return {}
-    try:
-        with open(config_path, "rb") as f:
-            return tomllib.load(f)
-    except Exception:
-        return {}
+
+    # Merge from furthest ancestor (last) to closest (first)
+    merged = {}
+    for cfg in reversed(configs):
+        for section, values in cfg.items():
+            if section not in merged:
+                merged[section] = {}
+            if isinstance(values, dict):
+                merged[section].update(values)
+            else:
+                merged[section] = values
+
+    return merged
 
 
 def _apply_toml_config(args, config: dict):

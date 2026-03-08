@@ -2,7 +2,7 @@
   "name": "claude-primer",
   "displayName": "Claude Primer",
   "description": "Prime your repo for Claude Code — context-aware knowledge architecture generator",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "publisher": "limaronaldo",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Other"],

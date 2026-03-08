@@ -29,7 +29,7 @@ import { execSync } from "child_process";
 import readline from "readline";
 import os from "os";
 
-const __version__ = "1.7.0";
+const __version__ = "1.8.0";
 
 // ─────────────────────────────────────────────
 // Constants
@@ -231,6 +231,45 @@ function nowFormatted() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ─────────────────────────────────────────────
+// Simple YAML serializer (avoids external dependency)
+// ─────────────────────────────────────────────
+
+function yamlEscapeScalar(value) {
+  if (!value) return '""';
+  const special = [':', '#', '{', '}', '[', ']', ',', '&', '*', '?', '|', '-', '<', '>', '=', '!', '%', '@', '`', '"', "'"];
+  if (special.some((c) => value.includes(c))) {
+    return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  }
+  const reserved = ['true', 'false', 'null', 'yes', 'no', 'on', 'off'];
+  if (reserved.includes(value.toLowerCase())) return `"${value}"`;
+  return value;
+}
+
+function dictToYaml(data, indent = 0) {
+  const lines = [];
+  const prefix = "  ".repeat(indent);
+  for (const [key, value] of Object.entries(data)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      lines.push(`${prefix}${key}:`);
+      lines.push(dictToYaml(value, indent + 1));
+    } else if (Array.isArray(value)) {
+      lines.push(`${prefix}${key}:`);
+      for (const item of value) {
+        lines.push(`${prefix}  - ${yamlEscapeScalar(String(item))}`);
+      }
+    } else if (typeof value === "string" && value.includes("\n")) {
+      lines.push(`${prefix}${key}: |`);
+      for (const line of value.split("\n")) {
+        lines.push(`${prefix}  ${line}`);
+      }
+    } else {
+      lines.push(`${prefix}${key}: ${yamlEscapeScalar(String(value))}`);
+    }
+  }
+  return lines.join("\n");
 }
 
 function safeRead(filepath, maxChars = 50000) {
@@ -2569,7 +2608,25 @@ async function run(target, opts = {}) {
   // Import from document
   if (fromDoc) {
     let docPath = fromDoc;
-    if (!path.isAbsolute(docPath)) docPath = path.join(target, docPath);
+    if (docPath.startsWith("http://") || docPath.startsWith("https://")) {
+      try {
+        const resp = await fetch(docPath, {
+          headers: { "User-Agent": "claude-primer" },
+          signal: AbortSignal.timeout(15000),
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const docContent = await resp.text();
+        // Write fetched content to a temp file so extractFromDocument can read it
+        const tmpPath = path.join(os.tmpdir(), `claude-primer-doc-${Date.now()}.md`);
+        fs.writeFileSync(tmpPath, docContent, "utf-8");
+        docPath = tmpPath;
+      } catch (e) {
+        console.error(`  Error fetching ${docPath}: ${e.message}`);
+        process.exit(1);
+      }
+    } else {
+      if (!path.isAbsolute(docPath)) docPath = path.join(target, docPath);
+    }
     const docData = extractFromDocument(docPath);
     let ec = info.existing_content || {};
     if (!ec || !Object.keys(ec).length) {
@@ -2701,27 +2758,74 @@ async function run(target, opts = {}) {
   }
 
   // Generate
-  if (effectiveCleanRoot && !dryRun) {
-    fs.mkdirSync(path.join(target, ".claude", "docs"), { recursive: true });
-  }
-
-  for (const pw of writePlan) {
-    if (pw.mode === "skip") {
-      result.actions.push({ filename: pw.filename, action: "skip", lines: 0, reason: pw.reason });
-      continue;
+  if (outputFormat === "json" || outputFormat === "yaml") {
+    // ── Structured output (JSON / YAML) ──
+    const allContent = {};
+    for (const pw of writePlan) {
+      let content = contentCache[pw.filename] || generators[pw.filename](info);
+      if (Object.keys(userTemplates).length) {
+        content = mergeWithTemplates(content, userTemplates, info._templateVars || {}, pw.filename);
+      }
+      allContent[pw.filename] = content;
     }
 
-    let content = contentCache[pw.filename] || generators[pw.filename](info);
-    if (Object.keys(userTemplates).length) {
-      content = mergeWithTemplates(content, userTemplates, info._templateVars || {}, pw.filename);
+    const tierInfo = info.tier || {};
+    const structured = {
+      version: __version__,
+      project: {
+        name: info.name || "",
+        stacks: info.stacks || [],
+        frameworks: info.frameworks || [],
+        tier: typeof tierInfo === "object" ? `T${tierInfo.tier || "?"}` : String(tierInfo),
+        languages: info.languages || [],
+      },
+      architecture: allContent["CLAUDE.md"] || "",
+      standards: allContent["STANDARDS.md"] || "",
+      quickstart: allContent["QUICKSTART.md"] || "",
+      errors_and_lessons: allContent["ERRORS_AND_LESSONS.md"] || "",
+    };
+
+    let outFile, outText;
+    if (outputFormat === "json") {
+      outFile = path.join(target, "claude-primer.json");
+      outText = JSON.stringify(structured, null, 2);
+    } else {
+      outFile = path.join(target, "claude-primer.yaml");
+      outText = dictToYaml(structured);
     }
-    const lineCount = content.split("\n").length;
-    const writePath = pw.actualPath || path.join(target, pw.filename);
+
     if (!dryRun) {
-      fs.mkdirSync(path.dirname(writePath), { recursive: true });
-      fs.writeFileSync(writePath, content, "utf-8");
+      fs.mkdirSync(path.dirname(outFile), { recursive: true });
+      fs.writeFileSync(outFile, outText, "utf-8");
     }
-    result.actions.push({ filename: pw.filename, action: pw.mode, lines: lineCount });
+
+    const lineCount = outText.split("\n").length;
+    result.actions.push({ filename: path.basename(outFile), action: "create", lines: lineCount });
+
+  } else {
+    // ── Markdown output (default) ──
+    if (effectiveCleanRoot && !dryRun) {
+      fs.mkdirSync(path.join(target, ".claude", "docs"), { recursive: true });
+    }
+
+    for (const pw of writePlan) {
+      if (pw.mode === "skip") {
+        result.actions.push({ filename: pw.filename, action: "skip", lines: 0, reason: pw.reason });
+        continue;
+      }
+
+      let content = contentCache[pw.filename] || generators[pw.filename](info);
+      if (Object.keys(userTemplates).length) {
+        content = mergeWithTemplates(content, userTemplates, info._templateVars || {}, pw.filename);
+      }
+      const lineCount = content.split("\n").length;
+      const writePath = pw.actualPath || path.join(target, pw.filename);
+      if (!dryRun) {
+        fs.mkdirSync(path.dirname(writePath), { recursive: true });
+        fs.writeFileSync(writePath, content, "utf-8");
+      }
+      result.actions.push({ filename: pw.filename, action: pw.mode, lines: lineCount });
+    }
   }
 
   // Verification
@@ -3979,31 +4083,55 @@ async function _runUpdate() {
 // TOML config file support
 // ─────────────────────────────────────────────
 
-function _loadTomlConfig(target) {
-  const configPath = path.join(path.resolve(target), ".claude-primer.toml");
-  if (!existsSync(configPath)) return null;
-  try {
-    const content = fs.readFileSync(configPath, "utf-8");
-    // Simple TOML parser for flat [flags] section
-    const result = { flags: {} };
-    let currentSection = null;
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const sectionMatch = trimmed.match(/^\[(\w+)\]$/);
-      if (sectionMatch) { currentSection = sectionMatch[1]; result[currentSection] = result[currentSection] || {}; continue; }
-      const kvMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
-      if (kvMatch && currentSection) {
-        let val = kvMatch[2].trim();
-        if (val === "true") val = true;
-        else if (val === "false") val = false;
-        else if (/^\d+$/.test(val)) val = parseInt(val, 10);
-        else if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-        result[currentSection][kvMatch[1]] = val;
-      }
+function _parseTomlContent(content) {
+  // Simple TOML parser for flat sections
+  const result = {};
+  let currentSection = null;
+  for (const line of content.split("\n")) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const sectionMatch = trimmed.match(/^\[(\w+)\]$/);
+    if (sectionMatch) { currentSection = sectionMatch[1]; result[currentSection] = result[currentSection] || {}; continue; }
+    const kvMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+    if (kvMatch && currentSection) {
+      let val = kvMatch[2].trim();
+      if (val === "true") val = true;
+      else if (val === "false") val = false;
+      else if (/^\d+$/.test(val)) val = parseInt(val, 10);
+      else if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+      result[currentSection][kvMatch[1]] = val;
     }
-    return Object.keys(result.flags).length ? result : null;
-  } catch { return null; }
+  }
+  return result;
+}
+
+function _loadTomlConfig(target) {
+  let current = path.resolve(target);
+  const configs = [];
+
+  while (true) {
+    const configPath = path.join(current, ".claude-primer.toml");
+    if (existsSync(configPath)) {
+      try {
+        const content = fs.readFileSync(configPath, "utf-8");
+        const parsed = _parseTomlContent(content);
+        if (parsed) configs.push(parsed);
+      } catch {}
+    }
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
+  }
+
+  if (!configs.length) return null;
+
+  // Merge from furthest ancestor to closest
+  const merged = { flags: {} };
+  for (const cfg of configs.reverse()) {
+    if (cfg.flags) Object.assign(merged.flags, cfg.flags);
+  }
+
+  return Object.keys(merged.flags).length ? merged : null;
 }
 
 function _applyTomlConfig(args, config) {
