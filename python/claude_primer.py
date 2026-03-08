@@ -35,7 +35,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Optional
 
-__version__ = "1.8.0"
+__version__ = "1.8.1"
 
 # ─────────────────────────────────────────────
 # Constants
@@ -3719,6 +3719,20 @@ def _run_diff(target: Path, args):
         print("  No differences — generated content matches existing files.")
 
 
+def _normalize_for_check(content: str) -> str:
+    """Normalize generated content for --check comparison by stripping volatile fields."""
+    import re
+    # Date stamps
+    content = re.sub(r'(last_updated:\s*)\d{4}-\d{2}-\d{2}', r'\1DATE', content)
+    content = re.sub(r'(\*\*Last Updated:\*\*\s*)\d{4}-\d{2}-\d{2}', r'\1DATE', content)
+    content = re.sub(r'(\*\*Created:\*\*\s*)\d{4}-\d{2}-\d{2}', r'\1DATE', content)
+    # Directory structure block (self-referential — lists generated files)
+    content = re.sub(r'### Directory Structure\n+```[\s\S]*?```\n*', '### Directory Structure\n', content)
+    # Provenance section (lists source files that change after first run)
+    content = re.sub(r'## Provenance\n+[\s\S]*?(?=\n---|\n## |$)', '## Provenance\n', content)
+    return content
+
+
 def _run_check(target: Path, args):
     """Check if generated docs are up-to-date. Returns True if all match, False otherwise."""
     target = target.resolve()
@@ -3727,6 +3741,9 @@ def _run_check(target: Path, args):
         return False
 
     info = scan_directory(target)
+    # Clear existing generated content so generators produce fresh output
+    # (matching first-run behavior, not migration behavior)
+    info["existing_content"] = {}
     rc = load_rc(target)
     if rc:
         info = apply_rc(info, rc)
@@ -3760,7 +3777,7 @@ def _run_check(target: Path, args):
             stale_count += 1
         else:
             old_content = actual_path.read_text(encoding="utf-8", errors="ignore")
-            if old_content == new_content:
+            if _normalize_for_check(old_content) == _normalize_for_check(new_content):
                 print(f"  OK  {filename}")
             else:
                 print(f"  STALE  {filename}")
@@ -3813,10 +3830,16 @@ def _run_export(target: Path, args):
         with zipfile.ZipFile(outfile, "w", zipfile.ZIP_DEFLATED) as zf:
             for name, fpath in collected:
                 zf.write(str(fpath), name)
-    else:
+    elif outfile.endswith(".tar.gz") or outfile.endswith(".tgz"):
         with tarfile.open(outfile, "w:gz") as tf:
             for name, fpath in collected:
                 tf.add(str(fpath), arcname=name)
+    else:
+        # Default: combined markdown with separators
+        parts = []
+        for name, fpath in collected:
+            parts.append(f"<!-- FILE: {name} -->\n{fpath.read_text(encoding='utf-8')}")
+        Path(outfile).write_text("\n\n---\n\n".join(parts), encoding="utf-8")
 
     print(f"  Exported {len(collected)} file(s) to {outfile}")
     for name, _ in collected:
@@ -4216,7 +4239,8 @@ Examples:
   claude-primer --git-mode skip --yes # full automation
   claude-primer --plan-json           # output project analysis as JSON
   claude-primer --check               # check if docs are up-to-date (CI-friendly)
-  claude-primer --export              # export docs to claude-primer-export.tar.gz
+  claude-primer --export              # export docs to claude-primer-export.md
+  claude-primer --export out.tar.gz   # export docs to tar.gz archive
   claude-primer --export out.zip      # export docs to zip archive
   claude-primer --migrate             # convert .claude-setup.rc to .claude-primer.toml
   claude-primer --init                # interactively create .claude-primer.toml
@@ -4261,8 +4285,8 @@ Examples:
                         help="Show what would change without writing (unified diff)")
     parser.add_argument("--check", action="store_true",
                         help="Check if generated docs are up-to-date (exit 1 if stale)")
-    parser.add_argument("--export", nargs="?", const="claude-primer-export.tar.gz", metavar="FILE",
-                        help="Export generated docs to archive (default: claude-primer-export.tar.gz)")
+    parser.add_argument("--export", nargs="?", const="claude-primer-export.md", metavar="FILE",
+                        help="Export generated docs to file (default: claude-primer-export.md)")
     parser.add_argument("--telemetry-off", action="store_true",
                         help="Disable telemetry even if CLAUDE_PRIMER_TELEMETRY=1 is set")
     parser.add_argument("--migrate", action="store_true",
@@ -4279,14 +4303,17 @@ Examples:
     # ── Dispatch standalone commands ──
     if args.migrate:
         _run_migrate(Path(args.target))
+        _send_telemetry_if_enabled(args, {"command": "migrate"}, _time.monotonic() - _t0)
         return
 
     if args.init:
         _run_init(Path(args.target), interactive=not args.yes)
+        _send_telemetry_if_enabled(args, {"command": "init"}, _time.monotonic() - _t0)
         return
 
     if args.update:
         _run_update()
+        _send_telemetry_if_enabled(args, {"command": "update"}, _time.monotonic() - _t0)
         return
 
     # ── Load .claude-primer.toml config ──
@@ -4303,16 +4330,19 @@ Examples:
     # ── Diff mode ──
     if args.diff:
         _run_diff(Path(args.target), args)
+        _send_telemetry_if_enabled(args, {"command": "diff"}, _time.monotonic() - _t0)
         return
 
     # ── Check mode ──
     if args.check:
         ok = _run_check(Path(args.target), args)
+        _send_telemetry_if_enabled(args, {"command": "check", "ok": ok}, _time.monotonic() - _t0)
         sys.exit(0 if ok else 1)
 
     # ── Export mode ──
     if args.export:
         _run_export(Path(args.target), args)
+        _send_telemetry_if_enabled(args, {"command": "export"}, _time.monotonic() - _t0)
         return
 
     # Parse agent list

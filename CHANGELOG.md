@@ -2,6 +2,21 @@
 
 All notable changes to claude-primer are documented here.
 
+## [1.8.1] — 2026-03-08
+
+### Fixed
+- **`--check` non-determinism** — `--check` now reliably reports OK on fresh generation by normalizing dates, directory listings, and provenance sections during comparison
+- **`--check` self-referential content** — generators no longer read their own output during check, preventing migration-induced differences
+- **`--export` format alignment** — both Python and npm now default to combined markdown (`.md`); Python still supports `.tar.gz` and `.zip` when explicitly specified
+- **npm `--diff` infinite loop** — fixed chunk-based diff algorithm that looped infinitely when comparing empty files to new content
+- **JetBrains plugin version** — bumped from 1.7.0 to 1.8.1
+- **Telemetry gaps** — all standalone commands (`--check`, `--export`, `--migrate`, `--init`, `--update`, `--diff`) now emit telemetry when opted in
+
+### Added
+- **v1.8.0 feature tests** — 13 Python + 8 npm tests covering `--check`, `--export`, `--migrate`, `--init`, `--format`
+- **npm property-based tests** — 5 randomized test scenarios mirroring the Python property tests
+- **README** — Usage section now documents `--check`, `--export`, `--format`, `--migrate`, `--init`, `--diff`
+
 ## [1.8.0] — 2026-03-08
 
 ### Added

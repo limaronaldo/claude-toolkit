@@ -29,7 +29,7 @@ import { execSync } from "child_process";
 import readline from "readline";
 import os from "os";
 
-const __version__ = "1.8.0";
+const __version__ = "1.8.1";
 
 // ─────────────────────────────────────────────
 // Constants
@@ -3541,6 +3541,8 @@ Usage:
   claude-primer --check                     # check if docs are up-to-date (CI-friendly)
   claude-primer --export                    # export docs to claude-primer-export.md
   claude-primer --export out.md             # export docs to custom file
+  claude-primer --export out.tar.gz         # export docs to tar.gz archive
+  claude-primer --export out.zip            # export docs to zip archive
   claude-primer --telemetry-off            # disable telemetry
   claude-primer --migrate                   # convert .claude-setup.rc to .claude-primer.toml
   claude-primer --init                      # interactively create .claude-primer.toml
@@ -3671,8 +3673,7 @@ function _runDiff(args) {
 
     // Chunk-based diff
     let i = 0, j = 0;
-    const maxLen = Math.max(oldLines.length, newLines.length);
-    while (i < maxLen || j < maxLen) {
+    while (i < oldLines.length || j < newLines.length) {
       if (i < oldLines.length && j < newLines.length && oldLines[i] === newLines[j]) {
         i++; j++;
         continue;
@@ -3685,6 +3686,7 @@ function _runDiff(args) {
         if (i < oldLines.length) i++;
         if (j < newLines.length) j++;
       }
+      if (i === startI && j === startJ) break; // safety: no progress
       console.log(`@@ -${startI + 1},${i - startI} +${startJ + 1},${j - startJ} @@`);
       for (let k = startI; k < i; k++) console.log(`-${oldLines[k]}`);
       for (let k = startJ; k < j; k++) console.log(`+${newLines[k]}`);
@@ -3697,6 +3699,19 @@ function _runDiff(args) {
   }
 }
 
+function _normalizeForCheck(content) {
+  // Strip volatile fields that change between runs
+  return content
+    // Date stamps
+    .replace(/(last_updated:\s*)\d{4}-\d{2}-\d{2}/g, "$1DATE")
+    .replace(/(\*\*Last Updated:\*\*\s*)\d{4}-\d{2}-\d{2}/g, "$1DATE")
+    .replace(/(\*\*Created:\*\*\s*)\d{4}-\d{2}-\d{2}/g, "$1DATE")
+    // Directory structure block (self-referential — lists generated files)
+    .replace(/### Directory Structure\n+```[\s\S]*?```\n*/g, "### Directory Structure\n")
+    // Provenance section (lists source files that change after first run)
+    .replace(/## Provenance\n+[\s\S]*?(?=\n---|\n## |$)/g, "## Provenance\n");
+}
+
 function _runCheck(args) {
   const target = path.resolve(args.target);
   if (!existsSync(target)) {
@@ -3705,6 +3720,9 @@ function _runCheck(args) {
   }
 
   const info = scanDirectory(target);
+  // Clear existing generated content so generators produce fresh output
+  // (matching first-run behavior, not migration behavior)
+  info.existing_content = {};
   const rc = loadRc(target);
   if (rc && Object.keys(rc).length) applyRc(info, rc);
   info.tier = detectProjectTier(info);
@@ -3739,7 +3757,7 @@ function _runCheck(args) {
       staleCount++;
     } else {
       const oldContent = fs.readFileSync(actualPath, "utf-8");
-      if (oldContent === newContent) {
+      if (_normalizeForCheck(oldContent) === _normalizeForCheck(newContent)) {
         console.log(`  OK  ${filename}`);
       } else {
         console.log(`  STALE  ${filename}`);
@@ -4171,32 +4189,38 @@ async function main() {
   // Standalone commands
   if (args.migrate) {
     _runMigrate(args.target);
+    sendTelemetryIfEnabled(args, { command: "migrate" }, Date.now() - _t0);
     return;
   }
   if (args.init) {
     await _runInit(args.target, !args.yes);
+    sendTelemetryIfEnabled(args, { command: "init" }, Date.now() - _t0);
     return;
   }
   if (args.update) {
     await _runUpdate();
+    sendTelemetryIfEnabled(args, { command: "update" }, Date.now() - _t0);
     return;
   }
 
   // Diff mode
   if (args.diff) {
     _runDiff(args);
+    sendTelemetryIfEnabled(args, { command: "diff" }, Date.now() - _t0);
     return;
   }
 
   // Check mode
   if (args.check) {
     const ok = _runCheck(args);
+    sendTelemetryIfEnabled(args, { command: "check", ok }, Date.now() - _t0);
     process.exit(ok ? 0 : 1);
   }
 
   // Export mode
   if (args.export) {
     _runExport(args);
+    sendTelemetryIfEnabled(args, { command: "export" }, Date.now() - _t0);
     return;
   }
 

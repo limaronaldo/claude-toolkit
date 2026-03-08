@@ -91,6 +91,14 @@ claude-primer --from-doc FILE       # bootstrap from PRD/spec document
 claude-primer --clean-root          # move aux docs to .claude/docs/
 claude-primer --git-mode stash      # auto-stash dirty changes
 claude-primer --git-mode skip       # skip git safety
+claude-primer --check               # check if docs are up-to-date (CI-friendly)
+claude-primer --export              # export docs to claude-primer-export.md
+claude-primer --export out.tar.gz   # export as tar.gz archive
+claude-primer --export out.zip      # export as zip archive
+claude-primer --format json         # output as JSON (also: yaml)
+claude-primer --migrate             # convert .claude-setup.rc to .claude-primer.toml
+claude-primer --init                # interactively create .claude-primer.toml
+claude-primer --diff                # show what would change (unified diff)
 ```
 
 Flags can be combined for full automation:

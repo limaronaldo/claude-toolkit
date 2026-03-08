@@ -1,11 +1,11 @@
 {
   "name": "claude-primer",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Prime your repo for Claude Code with context-aware knowledge architecture",
   "type": "module",
   "bin": { "claude-primer": "index.mjs" },
   "files": ["index.mjs", "README.md", "LICENSE"],
-  "scripts": { "test": "node --test tests/claude_primer.test.mjs" },
+  "scripts": { "test": "node --test tests/claude_primer.test.mjs tests/properties.test.mjs" },
   "keywords": ["claude", "claude-code", "documentation", "bootstrap", "ai"],
   "license": "MIT",
   "engines": { "node": ">=18.0.0" },

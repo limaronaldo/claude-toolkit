@@ -136,23 +136,51 @@ claude-primer --check --no-git-check</code></pre>
 
                     <h2>--export</h2>
                     <p>
-                        Bundle all generated docs into a single archive.
-                        Supports <code>.tar.gz</code>, <code>.zip</code>, or
-                        combined markdown output.
+                        Bundle all generated docs into a single file. The
+                        default output is a combined markdown file
+                        (<code>claude-primer-export.md</code>). Both Python
+                        and npm implementations use <code>.md</code> as the
+                        default format as of v1.8.1. Specify a
+                        <code>.tar.gz</code> or <code>.zip</code> filename to
+                        produce an archive instead (Python only when passing an
+                        explicit filename).
                     </p>
-                    <pre><code># Default: tar.gz archive
+                    <pre><code># Default: combined markdown file (claude-primer-export.md)
 claude-primer --export
 
-# Custom filename determines format
+# Explicit archive formats (Python)
+claude-primer --export docs-bundle.tar.gz
 claude-primer --export docs-bundle.zip
+
+# Combined markdown with custom name
 claude-primer --export knowledge.md
 
 # Include agent files if they exist
 claude-primer --export --agent all</code></pre>
                     <p>
-                        The archive includes CLAUDE.md, STANDARDS.md,
+                        The output includes CLAUDE.md, STANDARDS.md,
                         QUICKSTART.md, ERRORS_AND_LESSONS.md, and any
                         agent-specific context files.
+                    </p>
+
+                    <h2>--diff</h2>
+                    <p>
+                        Show what would change without writing files (unified
+                        diff). As of v1.8.1, a bug that caused an infinite loop
+                        when comparing an empty file to new content has been
+                        fixed in the npm implementation.
+                    </p>
+                    <pre><code>claude-primer --diff</code></pre>
+
+                    <h2>Telemetry</h2>
+                    <p>
+                        When telemetry is opted in via
+                        <code>CLAUDE_PRIMER_TELEMETRY=1</code>, all standalone
+                        commands emit telemetry events: <code>--check</code>,
+                        <code>--export</code>, <code>--migrate</code>,
+                        <code>--init</code>, <code>--update</code>, and
+                        <code>--diff</code>. Use <code>--telemetry-off</code>
+                        to suppress even when the environment variable is set.
                     </p>
 
                     <h2>--from-doc (URL Support)</h2>

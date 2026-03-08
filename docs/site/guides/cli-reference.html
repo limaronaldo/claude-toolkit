@@ -129,8 +129,12 @@
                             <tr>
                                 <td><code>--export [FILE]</code></td>
                                 <td>
-                                    Export docs to archive (default:
-                                    claude-primer-export.tar.gz)
+                                    Export docs to a file (default:
+                                    <code>claude-primer-export.md</code>,
+                                    combined markdown). Specify
+                                    <code>out.tar.gz</code> or
+                                    <code>out.zip</code> to produce an archive
+                                    instead.
                                 </td>
                             </tr>
                             <tr>
@@ -307,7 +311,9 @@
                                 <td><code>--diff</code></td>
                                 <td>
                                     Show what would change without writing
-                                    (unified diff)
+                                    (unified diff). Fixed in v1.8.1: no longer
+                                    loops infinitely when comparing an empty
+                                    file to new content (npm).
                                 </td>
                             </tr>
                         </tbody>
@@ -337,7 +343,16 @@
                             </tr>
                             <tr>
                                 <td><code>CLAUDE_PRIMER_TELEMETRY=1</code></td>
-                                <td>Opt-in to anonymous usage analytics</td>
+                                <td>
+                                    Opt-in to anonymous usage analytics. When
+                                    opted in, all standalone commands
+                                    (<code>--check</code>,
+                                    <code>--export</code>,
+                                    <code>--migrate</code>,
+                                    <code>--init</code>,
+                                    <code>--update</code>,
+                                    <code>--diff</code>) emit telemetry events.
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -368,8 +383,12 @@ claude-primer --format yaml --yes
 # Check freshness in CI
 claude-primer --check --no-git-check
 
-# Export for sharing
-claude-primer --export docs-bundle.zip</code></pre>
+# Export as combined markdown (default)
+claude-primer --export
+
+# Export as zip or tar.gz archive
+claude-primer --export docs-bundle.zip
+claude-primer --export docs-bundle.tar.gz</code></pre>
                 </section>
             </main>
             <footer class="site-footer">
