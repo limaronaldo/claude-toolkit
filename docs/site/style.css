@@ -22,7 +22,9 @@
 body {
   font-family: "Inter", sans-serif;
   background-color: var(--bg-color);
-  background-image: var(--bg-gradient);
+  background-image: radial-gradient(circle at 15% 50%, rgba(138, 43, 226, 0.08), transparent 40%),
+                    radial-gradient(circle at 85% 30%, rgba(88, 166, 255, 0.08), transparent 40%),
+                    var(--bg-gradient);
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.6;
@@ -30,28 +32,6 @@ body {
   margin: 0 auto;
   padding: 0 20px;
   position: relative;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(
-      circle at 15% 50%,
-      rgba(138, 43, 226, 0.08),
-      transparent 40%
-    ),
-    radial-gradient(
-      circle at 85% 30%,
-      rgba(88, 166, 255, 0.08),
-      transparent 40%
-    );
-  z-index: -1;
-  pointer-events: none;
 }
 
 /* Typography */
@@ -69,11 +49,18 @@ h6 {
 h1 {
   font-size: 3rem;
   letter-spacing: -0.03em;
-  background: linear-gradient(90deg, #58a6ff, #a371f7, #f778ba);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #fff;
   display: inline-block;
   margin-bottom: 0.5rem;
+}
+
+/* Fallback for webkit gradient text which can be buggy without correct vendor prefixing in older browsers */
+@supports (-webkit-background-clip: text) and (-webkit-text-fill-color: transparent) {
+  h1 {
+    background: linear-gradient(90deg, #58a6ff, #a371f7, #f778ba);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 h2 {
@@ -117,19 +104,21 @@ nav {
   gap: 1.5rem;
   flex-wrap: wrap;
   padding: 1rem 0;
-  border-bottom: none !important;
   position: sticky;
   top: 0;
   z-index: 100;
   background: var(--nav-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  transform: translateZ(0); /* Safari fix */
+  will-change: transform; /* Safari fix */
+  -webkit-transform: translateZ(0);
   margin-bottom: 2rem;
   margin-left: -20px;
   margin-right: -20px;
   padding-left: 20px;
   padding-right: 20px;
-  border-bottom: 1px solid var(--border-color) !important;
+  border-bottom: 1px solid var(--border-color);
 }
 
 nav a {
