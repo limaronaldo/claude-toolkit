@@ -113,7 +113,14 @@ claude-primer --dry-run
 claude-primer --force --yes
 
 # Output project analysis as JSON
-claude-primer --plan-json</code></pre>
+claude-primer --plan-json
+
+# Structured output (JSON or YAML)
+claude-primer --format json --yes
+claude-primer --format yaml --yes
+
+# Check if docs are up-to-date (great for CI)
+claude-primer --check --no-git-check</code></pre>
 
                     <h2>What Happens</h2>
                     <ol>

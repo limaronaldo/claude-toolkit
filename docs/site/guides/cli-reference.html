@@ -120,6 +120,20 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td><code>--check</code></td>
+                                <td>
+                                    Check if generated docs are up-to-date
+                                    (exit 1 if stale)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--export [FILE]</code></td>
+                                <td>
+                                    Export docs to archive (default:
+                                    claude-primer-export.tar.gz)
+                                </td>
+                            </tr>
+                            <tr>
                                 <td><code>--reconfigure</code></td>
                                 <td>
                                     Re-run wizard (ignores saved
@@ -147,10 +161,11 @@
                                 <td>Generate Ralph integration files</td>
                             </tr>
                             <tr>
-                                <td><code>--from-doc &lt;file&gt;</code></td>
+                                <td><code>--from-doc &lt;file|URL&gt;</code></td>
                                 <td>
                                     Bootstrap from an existing document (PRD,
-                                    spec, etc.)
+                                    spec, etc.). Accepts local file paths and
+                                    HTTP/HTTPS URLs.
                                 </td>
                             </tr>
                             <tr>
@@ -249,11 +264,12 @@
                             </tr>
                             <tr>
                                 <td>
-                                    <code>--format markdown|yaml|json</code>
+                                    <code>--format json|yaml|markdown</code>
                                 </td>
                                 <td>
-                                    Output format for agent context files
-                                    (default: markdown)
+                                    Output format for generated files
+                                    (default: markdown). JSON and YAML
+                                    produce structured knowledge files.
                                 </td>
                             </tr>
                         </tbody>
@@ -341,6 +357,19 @@ claude-primer --diff
 
 # CI/CD pipeline usage
 claude-primer /workspace --yes --no-git-check --plan-json > analysis.json</code></pre>
+
+                    <h3>Structured Output</h3>
+                    <pre><code># JSON knowledge file
+claude-primer --format json --yes
+
+# YAML knowledge file
+claude-primer --format yaml --yes
+
+# Check freshness in CI
+claude-primer --check --no-git-check
+
+# Export for sharing
+claude-primer --export docs-bundle.zip</code></pre>
                 </section>
             </main>
             <footer class="site-footer">

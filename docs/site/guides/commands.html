@@ -115,6 +115,63 @@ claude-primer --init --yes  # non-interactive with defaults</code></pre>
                         SHA256 checksum, backs up the current binary, and
                         replaces it. Restores from backup on failure.
                     </p>
+
+                    <h2>--check</h2>
+                    <p>
+                        Validate whether generated docs are up-to-date.
+                        Returns exit code 0 if all files match, exit code 1 if
+                        any are stale or missing. Ideal for CI pipelines.
+                    </p>
+                    <pre><code># Check if docs are current
+claude-primer --check
+
+# Use in CI (fails the build if docs are stale)
+claude-primer --check --no-git-check</code></pre>
+                    <p>Output shows status per file:</p>
+                    <pre><code>  OK      CLAUDE.md
+  OK      STANDARDS.md
+  STALE   QUICKSTART.md
+  MISSING ERRORS_AND_LESSONS.md
+  2 file(s) stale or missing.</code></pre>
+
+                    <h2>--export</h2>
+                    <p>
+                        Bundle all generated docs into a single archive.
+                        Supports <code>.tar.gz</code>, <code>.zip</code>, or
+                        combined markdown output.
+                    </p>
+                    <pre><code># Default: tar.gz archive
+claude-primer --export
+
+# Custom filename determines format
+claude-primer --export docs-bundle.zip
+claude-primer --export knowledge.md
+
+# Include agent files if they exist
+claude-primer --export --agent all</code></pre>
+                    <p>
+                        The archive includes CLAUDE.md, STANDARDS.md,
+                        QUICKSTART.md, ERRORS_AND_LESSONS.md, and any
+                        agent-specific context files.
+                    </p>
+
+                    <h2>--from-doc (URL Support)</h2>
+                    <p>
+                        Bootstrap from a remote document. Accepts both local
+                        file paths and HTTP/HTTPS URLs.
+                    </p>
+                    <pre><code># From a local file
+claude-primer --from-doc ./architecture.md
+
+# From a URL
+claude-primer --from-doc https://example.com/spec.md
+
+# From a GitHub raw URL
+claude-primer --from-doc https://raw.githubusercontent.com/org/repo/main/ARCHITECTURE.md</code></pre>
+                    <p>
+                        URLs are fetched with a 15-second timeout. The content
+                        is parsed and used to seed the generated documentation.
+                    </p>
                 </section>
             </main>
             <footer class="site-footer">

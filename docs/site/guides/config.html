@@ -201,6 +201,34 @@ claude-primer --diff --with-readme --clean-root</code></pre>
                         <code>.claude-primer.toml</code> file is for CLI flag
                         defaults only. Both can coexist.
                     </p>
+
+                    <h2>Workspace Inheritance</h2>
+                    <p>
+                        Config files in parent directories apply as defaults
+                        to subdirectories. The closest config wins — child
+                        settings override parent settings.
+                    </p>
+                    <pre><code># Monorepo example:
+# /myproject/.claude-primer.toml        ← shared defaults
+# /myproject/frontend/.claude-primer.toml  ← frontend overrides
+# /myproject/backend/                    ← inherits from root</code></pre>
+                    <p>
+                        Claude Primer walks up the directory tree from the
+                        target, collecting all <code>.claude-primer.toml</code>
+                        files. Settings merge from furthest ancestor to closest
+                        child, so you can set team-wide defaults at the root
+                        and override per-package.
+                    </p>
+                    <pre><code># Root config: /myproject/.claude-primer.toml
+[flags]
+force = true
+with_readme = true
+git_mode = "skip"
+
+# Frontend override: /myproject/frontend/.claude-primer.toml
+[flags]
+clean_root = true
+# force and with_readme inherited from root</code></pre>
                 </section>
             </main>
             <footer class="site-footer">
