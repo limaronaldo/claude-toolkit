@@ -216,8 +216,14 @@ jobs:
         working-directory: python
         run: |
           pip install build twine
-          python -m build
-          twine upload dist/*
+          LOCAL=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          REMOTE=$(pip index versions claude-primer 2>/dev/null | grep -oP '^\S+ \(\K[^)]+' || echo "0.0.0")
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "Version $LOCAL already published — skipping"
+          else
+            python -m build
+            twine upload dist/*
+          fi
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
@@ -233,7 +239,14 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Publish to npm
         working-directory: npm
-        run: npm publish
+        run: |
+          CURRENT=$(npm view claude-primer version 2>/dev/null || echo "0.0.0")
+          LOCAL=$(node -p "require('./package.json').version")
+          if [ "$CURRENT" = "$LOCAL" ]; then
+            echo "Version $LOCAL already published — skipping"
+          else
+            npm publish
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
