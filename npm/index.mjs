@@ -3337,6 +3337,7 @@ function parseArgs(argv) {
     watchAuto: false,
     agent: null,
     format: "markdown",
+    diff: false,
   };
 
   const positional = [];
@@ -3388,6 +3389,7 @@ function parseArgs(argv) {
         i++;
         args.pluginDir = argv[i] || null;
         break;
+      case "--diff": args.diff = true; break;
       case "--telemetry-off": args.telemetryOff = true; break;
       case "--help": case "-h":
         console.log(`claude-primer — Claude Code Knowledge Architecture Bootstrap
@@ -3414,6 +3416,7 @@ Usage:
   claude-primer --agent <agents>           # target: claude,cursor,copilot,windsurf,aider,codex,all
   claude-primer --format markdown|yaml|json # output format for agent files
   claude-primer --plugin-dir <dir>         # plugin generators directory
+  claude-primer --diff                      # show what would change (unified diff)
   claude-primer --telemetry-off            # disable telemetry`);
         process.exit(0);
         break;
@@ -3483,14 +3486,158 @@ function sendTelemetryIfEnabled(args, info, durationMs) {
   } catch { /* ignore */ }
 }
 
+// ─────────────────────────────────────────────
+// Diff mode
+// ─────────────────────────────────────────────
+
+function _runDiff(args) {
+  const target = path.resolve(args.target);
+  if (!existsSync(target)) {
+    console.log("  Target directory does not exist — nothing to diff.");
+    return;
+  }
+
+  const info = scanDirectory(target);
+  const rc = loadRc(target);
+  if (rc && Object.keys(rc).length) applyRc(info, rc);
+  info.tier = detectProjectTier(info);
+
+  const tplDir = args.templateDir || path.join(target, ".claude-primer", "templates");
+  const userTemplates = existsSync(tplDir) ? loadTemplates(tplDir) : {};
+  if (Object.keys(userTemplates).length) {
+    info._templates = userTemplates;
+    info._templateVars = buildTemplateVariables(info);
+  }
+
+  const cleanRoot = args.cleanRoot;
+  const filesToGenerate = [...DEFAULT_FILES];
+  if (args.withReadme) filesToGenerate.push(["README.md", (i) => generateReadmeMd(i)]);
+
+  let hasDiff = false;
+  for (const [filename, generator] of filesToGenerate) {
+    let actualPath;
+    if (cleanRoot && filename !== "CLAUDE.md" && filename !== "README.md") {
+      actualPath = path.join(target, ".claude", "docs", filename);
+    } else {
+      actualPath = path.join(target, filename);
+    }
+
+    let newContent = generator(info);
+    if (Object.keys(userTemplates).length) {
+      newContent = mergeWithTemplates(newContent, userTemplates, info._templateVars || {}, filename);
+    }
+
+    let oldContent = "";
+    if (existsSync(actualPath)) {
+      oldContent = fs.readFileSync(actualPath, "utf-8");
+    }
+
+    if (oldContent === newContent) continue;
+
+    // Simple unified diff
+    const oldLines = oldContent.split("\n");
+    const newLines = newContent.split("\n");
+    const oldLabel = oldContent ? `a/${filename}` : "/dev/null";
+    const newLabel = `b/${filename}`;
+    console.log(`--- ${oldLabel}`);
+    console.log(`+++ ${newLabel}`);
+
+    // Chunk-based diff
+    let i = 0, j = 0;
+    const maxLen = Math.max(oldLines.length, newLines.length);
+    while (i < maxLen || j < maxLen) {
+      if (i < oldLines.length && j < newLines.length && oldLines[i] === newLines[j]) {
+        i++; j++;
+        continue;
+      }
+      // Find changed region
+      const startI = i, startJ = j;
+      // Advance until lines match again or end
+      while (i < oldLines.length || j < newLines.length) {
+        if (i < oldLines.length && j < newLines.length && oldLines[i] === newLines[j]) break;
+        if (i < oldLines.length) i++;
+        if (j < newLines.length) j++;
+      }
+      console.log(`@@ -${startI + 1},${i - startI} +${startJ + 1},${j - startJ} @@`);
+      for (let k = startI; k < i; k++) console.log(`-${oldLines[k]}`);
+      for (let k = startJ; k < j; k++) console.log(`+${newLines[k]}`);
+      hasDiff = true;
+    }
+  }
+
+  if (!hasDiff) {
+    console.log("  No differences — generated content matches existing files.");
+  }
+}
+
+// ─────────────────────────────────────────────
+// TOML config file support
+// ─────────────────────────────────────────────
+
+function _loadTomlConfig(target) {
+  const configPath = path.join(path.resolve(target), ".claude-primer.toml");
+  if (!existsSync(configPath)) return null;
+  try {
+    const content = fs.readFileSync(configPath, "utf-8");
+    // Simple TOML parser for flat [flags] section
+    const result = { flags: {} };
+    let currentSection = null;
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const sectionMatch = trimmed.match(/^\[(\w+)\]$/);
+      if (sectionMatch) { currentSection = sectionMatch[1]; result[currentSection] = result[currentSection] || {}; continue; }
+      const kvMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+      if (kvMatch && currentSection) {
+        let val = kvMatch[2].trim();
+        if (val === "true") val = true;
+        else if (val === "false") val = false;
+        else if (/^\d+$/.test(val)) val = parseInt(val, 10);
+        else if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+        result[currentSection][kvMatch[1]] = val;
+      }
+    }
+    return Object.keys(result.flags).length ? result : null;
+  } catch { return null; }
+}
+
+function _applyTomlConfig(args, config) {
+  const flags = config.flags || {};
+  const boolMap = {
+    force: "force", force_all: "forceAll", dry_run: "dryRun",
+    with_readme: "withReadme", with_ralph: "withRalph",
+    no_git_check: "noGitCheck", clean_root: "cleanRoot",
+    watch: "watch", watch_auto: "watchAuto",
+  };
+  for (const [tomlKey, argKey] of Object.entries(boolMap)) {
+    if (tomlKey in flags && !args[argKey]) args[argKey] = !!flags[tomlKey];
+  }
+  if (flags.git_mode && args.gitMode === "ask") args.gitMode = flags.git_mode;
+  if (flags.template_dir && !args.templateDir) args.templateDir = flags.template_dir;
+  if (flags.plugin_dir && !args.pluginDir) args.pluginDir = flags.plugin_dir;
+  if (flags.agent && !args.agent) args.agent = flags.agent;
+  if (flags.format && args.format === "markdown") args.format = flags.format;
+  if (flags.watch_interval && args.watchInterval === 5) args.watchInterval = parseInt(flags.watch_interval, 10);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const _t0 = Date.now();
+
+  // Load .claude-primer.toml config
+  const tomlConfig = _loadTomlConfig(args.target);
+  if (tomlConfig) _applyTomlConfig(args, tomlConfig);
 
   if (args.planJsonFlag) {
     const result = planJson(args.target, args.withReadme);
     console.log(JSON.stringify(result, null, 2));
     sendTelemetryIfEnabled(args, result, Date.now() - _t0);
+    return;
+  }
+
+  // Diff mode
+  if (args.diff) {
+    _runDiff(args);
     return;
   }
 

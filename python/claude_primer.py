@@ -3550,6 +3550,132 @@ def plan_json(target: Path, with_readme: bool = False) -> dict:
     }
 
 
+# ─────────────────────────────────────────────
+# Diff mode
+# ─────────────────────────────────────────────
+
+def _run_diff(target: Path, args):
+    """Generate content in-memory and show unified diff against existing files."""
+    import difflib
+    target = target.resolve()
+    if not target.exists():
+        print("  Target directory does not exist — nothing to diff.")
+        return
+
+    info = scan_directory(target)
+    rc = load_rc(target)
+    if rc:
+        info = apply_rc(info, rc)
+
+    info["tier"] = detect_project_tier(info)
+
+    tpl_dir = Path(args.template_dir) if args.template_dir else target / ".claude-primer" / "templates"
+    user_templates = load_templates(tpl_dir) if tpl_dir.is_dir() else {}
+    if user_templates:
+        info["_templates"] = user_templates
+        info["_template_vars"] = _build_template_variables(info)
+
+    clean_root = args.clean_root
+    files_to_generate = list(DEFAULT_FILES)
+    if args.with_readme:
+        files_to_generate.append(("README.md", generate_readme_md))
+
+    has_diff = False
+    for filename, generator in files_to_generate:
+        if clean_root and filename not in ("CLAUDE.md", "README.md"):
+            actual_path = target / ".claude" / "docs" / filename
+        else:
+            actual_path = target / filename
+
+        new_content = generator(info)
+        if user_templates:
+            new_content = merge_with_templates(new_content, user_templates, info.get("_template_vars", {}), filename)
+
+        if actual_path.exists():
+            old_content = actual_path.read_text(encoding="utf-8", errors="ignore")
+        else:
+            old_content = ""
+
+        if old_content == new_content:
+            continue
+
+        old_label = f"a/{filename}" if old_content else "/dev/null"
+        new_label = f"b/{filename}"
+        diff_lines = list(difflib.unified_diff(
+            old_content.splitlines(keepends=True),
+            new_content.splitlines(keepends=True),
+            fromfile=old_label,
+            tofile=new_label,
+        ))
+        if diff_lines:
+            has_diff = True
+            print("".join(diff_lines))
+
+    if not has_diff:
+        print("  No differences — generated content matches existing files.")
+
+
+# ─────────────────────────────────────────────
+# TOML config file support
+# ─────────────────────────────────────────────
+
+TOML_CONFIG_FILE = ".claude-primer.toml"
+
+def _load_toml_config(target: Path) -> dict:
+    """Load .claude-primer.toml from target directory. Returns empty dict if absent."""
+    config_path = target.resolve() / TOML_CONFIG_FILE if target != Path(".") else Path(TOML_CONFIG_FILE)
+    if target == Path("."):
+        config_path = Path.cwd() / TOML_CONFIG_FILE
+    else:
+        config_path = target.resolve() / TOML_CONFIG_FILE
+    if not config_path.exists():
+        return {}
+    try:
+        import tomllib
+    except ImportError:
+        try:
+            import tomli as tomllib  # Python < 3.11
+        except ImportError:
+            return {}
+    try:
+        with open(config_path, "rb") as f:
+            return tomllib.load(f)
+    except Exception:
+        return {}
+
+
+def _apply_toml_config(args, config: dict):
+    """Apply TOML config values as defaults for CLI args (CLI always wins)."""
+    flags = config.get("flags", {})
+    # Boolean flags — only set if not already set via CLI
+    bool_map = {
+        "force": "force", "force_all": "force_all", "dry_run": "dry_run",
+        "with_readme": "with_readme", "with_ralph": "with_ralph",
+        "no_git_check": "no_git_check", "clean_root": "clean_root",
+        "watch": "watch", "watch_auto": "watch_auto",
+    }
+    for toml_key, arg_key in bool_map.items():
+        if toml_key in flags and not getattr(args, arg_key, False):
+            setattr(args, arg_key, bool(flags[toml_key]))
+
+    # String/int flags — only set if CLI has default value
+    if "git_mode" in flags and args.git_mode == "ask":
+        setattr(args, "git_mode", flags["git_mode"])
+    if "template_dir" in flags and not args.template_dir:
+        setattr(args, "template_dir", flags["template_dir"])
+    if "plugin_dir" in flags and not args.plugin_dir:
+        setattr(args, "plugin_dir", flags["plugin_dir"])
+    if "agent" in flags and not args.agent:
+        setattr(args, "agent", flags["agent"])
+    if "format" in flags and args.format == "markdown":
+        setattr(args, "format", flags["format"])
+    if "watch_interval" in flags and args.watch_interval == 5:
+        setattr(args, "watch_interval", int(flags["watch_interval"]))
+
+    # Project section — used by RC/wizard system (loaded separately)
+    # No action needed here; the RC system handles project metadata
+
+
 def main():
     # Ensure UTF-8 output on Windows (cp1252 can't encode box-drawing chars)
     import sys
@@ -3612,6 +3738,8 @@ Examples:
                         help="Output format for agent context files (default: markdown)")
     parser.add_argument("--plugin-dir", type=str, default=None,
                         help="Directory containing plugin generators (default: .claude-primer/plugins/)")
+    parser.add_argument("--diff", action="store_true",
+                        help="Show what would change without writing (unified diff)")
     parser.add_argument("--telemetry-off", action="store_true",
                         help="Disable telemetry even if CLAUDE_PRIMER_TELEMETRY=1 is set")
 
@@ -3619,10 +3747,20 @@ Examples:
 
     _t0 = _time.monotonic()
 
+    # ── Load .claude-primer.toml config ──
+    toml_config = _load_toml_config(Path(args.target))
+    if toml_config:
+        _apply_toml_config(args, toml_config)
+
     if args.plan_json:
         result = plan_json(Path(args.target), with_readme=args.with_readme)
         print(json.dumps(result, indent=2))
         _send_telemetry_if_enabled(args, result, _time.monotonic() - _t0)
+        return
+
+    # ── Diff mode ──
+    if args.diff:
+        _run_diff(Path(args.target), args)
         return
 
     # Parse agent list

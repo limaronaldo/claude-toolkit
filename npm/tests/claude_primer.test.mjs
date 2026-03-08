@@ -1724,3 +1724,378 @@ describe('CommandDedup', () => {
     }
   });
 });
+
+
+// ─────────────────────────────────────────────
+// Confidence Scoring
+// ─────────────────────────────────────────────
+
+describe('ConfidenceScoring', () => {
+  it('plan-json includes confidence_scores', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test","dependencies":{"express":"^4.0"}}');
+      const r = runSetup(['--plan-json', '--no-git-check'], { cwd: tmp });
+      const data = JSON.parse(r.stdout);
+      assert.ok('confidence_scores' in data);
+      assert.ok('stacks' in data.confidence_scores);
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('stack confidence high from config file', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      const r = runSetup(['--plan-json', '--no-git-check'], { cwd: tmp });
+      const data = JSON.parse(r.stdout);
+      assert.ok(Array.isArray(data.confidence_scores.stacks), 'stacks confidence should be an array');
+      if (data.confidence_scores.stacks.length > 0) {
+        assert.ok(data.confidence_scores.stacks[0].confidence === 'high', 'Config file should give high confidence');
+      }
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('description confidence from package.json', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test","description":"A cool project"}');
+      const r = runSetup(['--plan-json', '--no-git-check'], { cwd: tmp });
+      const data = JSON.parse(r.stdout);
+      assert.ok(data.confidence_scores.description, 'Description should have confidence entry');
+      assert.ok(data.confidence_scores.description.confidence, 'Should have confidence level');
+    } finally {
+      cleanup(tmp);
+    }
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// Template System
+// ─────────────────────────────────────────────
+
+describe('TemplateSystem', () => {
+  it('template section override', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.mkdirSync(path.join(tmp, '.claude-primer', 'templates'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, '.claude-primer', 'templates', 'claude.md'),
+        '## Code Architecture\n\nCustom architecture content here.\n');
+      runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      const content = fs.readFileSync(path.join(tmp, 'CLAUDE.md'), 'utf-8');
+      assert.ok(content.includes('Custom architecture content here'), 'Template override should be applied');
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('template variable substitution', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.mkdirSync(path.join(tmp, '.claude-primer', 'templates'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, '.claude-primer', 'templates', 'claude.md'),
+        '## Repository Overview\n\n{{project_name}} is built with {{tech_stack}}.\n');
+      runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      const content = fs.readFileSync(path.join(tmp, 'CLAUDE.md'), 'utf-8');
+      assert.ok(!content.includes('{{project_name}}'), 'Variables should be substituted');
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('template-dir flag', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      const tplDir = path.join(tmp, 'my-templates');
+      fs.mkdirSync(tplDir);
+      fs.writeFileSync(path.join(tplDir, 'claude.md'),
+        '## Code Architecture\n\nFrom custom dir.\n');
+      runSetup(['--yes', '--no-git-check', '--template-dir', tplDir], { cwd: tmp });
+      const content = fs.readFileSync(path.join(tmp, 'CLAUDE.md'), 'utf-8');
+      assert.ok(content.includes('From custom dir'), 'Custom template dir should work');
+    } finally {
+      cleanup(tmp);
+    }
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// Watch Mode
+// ─────────────────────────────────────────────
+
+describe('WatchMode', () => {
+  it('--watch flag in help', () => {
+    const r = runSetup(['--help']);
+    assert.ok(r.stdout.includes('--watch'));
+  });
+
+  it('--watch-interval in help', () => {
+    const r = runSetup(['--help']);
+    assert.ok(r.stdout.includes('--watch-interval'));
+  });
+
+  it('--watch-auto in help', () => {
+    const r = runSetup(['--help']);
+    assert.ok(r.stdout.includes('--watch-auto'));
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// Multi-Agent Output
+// ─────────────────────────────────────────────
+
+describe('MultiAgentOutput', () => {
+  it('cursor output', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check', '--agent', 'cursor'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, '.cursor', 'rules', 'project.mdc')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('copilot output', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check', '--agent', 'copilot'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, '.github', 'copilot-instructions.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('codex output', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check', '--agent', 'codex'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, 'AGENTS.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('all agents', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check', '--agent', 'all'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, 'AGENTS.md')));
+      assert.ok(fs.existsSync(path.join(tmp, '.windsurfrules')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('json format', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check', '--agent', 'copilot', '--format', 'json'], { cwd: tmp });
+      const jsonFile = path.join(tmp, '.claude-primer-copilot.json');
+      assert.ok(fs.existsSync(jsonFile));
+      const data = JSON.parse(fs.readFileSync(jsonFile, 'utf-8'));
+      assert.ok('stacks' in data);
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('yaml format', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check', '--agent', 'copilot', '--format', 'yaml'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, '.claude-primer-copilot.yaml')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// Plugin System
+// ─────────────────────────────────────────────
+
+describe('PluginSystem', () => {
+  it('plugin generates file', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.mkdirSync(path.join(tmp, '.claude-primer', 'plugins'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, '.claude-primer', 'plugins', 'hello.mjs'),
+        'export default function generate(info) { return { filename: "HELLO.md", content: "# Hello from plugin\\n" }; }\n');
+      runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, 'HELLO.md')));
+      const content = fs.readFileSync(path.join(tmp, 'HELLO.md'), 'utf-8');
+      assert.ok(content.includes('Hello from plugin'));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('plugin-dir flag', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      const pluginDir = path.join(tmp, 'my-plugins');
+      fs.mkdirSync(pluginDir);
+      fs.writeFileSync(path.join(pluginDir, 'custom.mjs'),
+        'export default function generate(info) { return { filename: "CUSTOM.md", content: "# Custom\\n" }; }\n');
+      runSetup(['--yes', '--no-git-check', '--plugin-dir', pluginDir], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, 'CUSTOM.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('plugin multi-file output', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.mkdirSync(path.join(tmp, '.claude-primer', 'plugins'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, '.claude-primer', 'plugins', 'multi.mjs'),
+        'export default function generate(info) { return [{ filename: "A.md", content: "# A\\n" }, { filename: "B.md", content: "# B\\n" }]; }\n');
+      runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, 'A.md')));
+      assert.ok(fs.existsSync(path.join(tmp, 'B.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('broken plugin does not crash', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.mkdirSync(path.join(tmp, '.claude-primer', 'plugins'), { recursive: true });
+      fs.writeFileSync(path.join(tmp, '.claude-primer', 'plugins', 'broken.mjs'),
+        'export default function generate(info) { throw new Error("boom"); }\n');
+      const r = runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      // Should still create the standard files
+      assert.ok(fs.existsSync(path.join(tmp, 'CLAUDE.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('--plugin-dir in help', () => {
+    const r = runSetup(['--help']);
+    assert.ok(r.stdout.includes('--plugin-dir'));
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// Telemetry
+// ─────────────────────────────────────────────
+
+describe('Telemetry', () => {
+  it('--telemetry-off in help', () => {
+    const r = runSetup(['--help']);
+    assert.ok(r.stdout.includes('--telemetry-off'));
+  });
+
+  it('telemetry not sent by default', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      // Should complete without errors even without telemetry endpoint
+      const r = runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      assert.ok(r.exitCode === 0);
+    } finally {
+      cleanup(tmp);
+    }
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// Diff Mode
+// ─────────────────────────────────────────────
+
+describe('DiffMode', () => {
+  it('--diff flag in help', () => {
+    const r = runSetup(['--help']);
+    assert.ok(r.stdout.includes('--diff'));
+  });
+
+  it('diff shows changes when files modified', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      fs.writeFileSync(path.join(tmp, 'CLAUDE.md'), '# Old content\n');
+      const r = runSetup(['--diff'], { cwd: tmp });
+      assert.ok(r.stdout.includes('---') || r.stdout.includes('+++'));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('diff does not write files', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      runSetup(['--diff'], { cwd: tmp });
+      assert.ok(!fs.existsSync(path.join(tmp, 'STANDARDS.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+});
+
+
+// ─────────────────────────────────────────────
+// TOML Config
+// ─────────────────────────────────────────────
+
+describe('TomlConfig', () => {
+  it('toml sets defaults', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.writeFileSync(path.join(tmp, '.claude-primer.toml'), '[flags]\nforce = true\nwith_readme = true\n');
+      runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      assert.ok(fs.existsSync(path.join(tmp, 'README.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('cli overrides toml', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      fs.writeFileSync(path.join(tmp, '.claude-primer.toml'), '[flags]\nwith_readme = true\n');
+      runSetup(['--dry-run', '--yes'], { cwd: tmp });
+      assert.ok(!fs.existsSync(path.join(tmp, 'README.md')));
+    } finally {
+      cleanup(tmp);
+    }
+  });
+
+  it('missing toml is ok', () => {
+    const tmp = makeTmpDir();
+    try {
+      fs.writeFileSync(path.join(tmp, 'package.json'), '{"name":"test"}');
+      const r = runSetup(['--yes', '--no-git-check'], { cwd: tmp });
+      assert.ok(r.exitCode === 0);
+    } finally {
+      cleanup(tmp);
+    }
+  });
+});

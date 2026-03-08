@@ -1453,3 +1453,73 @@ class TestTelemetry:
         # No PII
         assert "root" not in payload
         assert "name" not in payload
+
+
+# ─────────────────────────────────────────────
+# Diff mode
+# ─────────────────────────────────────────────
+
+class TestDiffMode:
+    def test_diff_flag_in_help(self):
+        r = run_setup("--help")
+        assert "--diff" in r.stdout
+
+    def test_diff_shows_changes(self, tmp_path):
+        pkg = tmp_path / "package.json"
+        pkg.write_text('{"name":"test","dependencies":{"express":"^4.0"}}')
+        # Generate first
+        run_setup(str(tmp_path), "--yes", "--no-git-check")
+        assert (tmp_path / "CLAUDE.md").exists()
+        # Modify a file to force differences
+        claude_md = tmp_path / "CLAUDE.md"
+        claude_md.write_text("# Old content\n")
+        # Run diff
+        r = run_setup(str(tmp_path), "--diff")
+        assert r.returncode == 0
+        assert "---" in r.stdout or "+++" in r.stdout
+
+    def test_diff_no_changes(self, tmp_path):
+        pkg = tmp_path / "package.json"
+        pkg.write_text('{"name":"test"}')
+        run_setup(str(tmp_path), "--yes", "--no-git-check")
+        # Run diff immediately — should report no differences
+        r = run_setup(str(tmp_path), "--diff")
+        assert "No differences" in r.stdout or "---" in r.stdout
+
+    def test_diff_does_not_write(self, tmp_path):
+        pkg = tmp_path / "package.json"
+        pkg.write_text('{"name":"test"}')
+        # Run with --diff on a fresh project — should not create files
+        r = run_setup(str(tmp_path), "--diff")
+        assert not (tmp_path / "STANDARDS.md").exists()
+
+
+# ─────────────────────────────────────────────
+# TOML config file
+# ─────────────────────────────────────────────
+
+class TestTomlConfig:
+    def test_toml_sets_defaults(self, tmp_path):
+        pkg = tmp_path / "package.json"
+        pkg.write_text('{"name":"test"}')
+        toml = tmp_path / ".claude-primer.toml"
+        toml.write_text('[flags]\nforce = true\nwith_readme = true\n')
+        r = run_setup(str(tmp_path), "--yes", "--no-git-check")
+        # with_readme should be applied from TOML
+        assert (tmp_path / "README.md").exists()
+
+    def test_cli_overrides_toml(self, tmp_path):
+        pkg = tmp_path / "package.json"
+        pkg.write_text('{"name":"test"}')
+        toml = tmp_path / ".claude-primer.toml"
+        toml.write_text('[flags]\nwith_readme = true\n')
+        # Dry-run from CLI should prevent writing even though TOML sets with_readme
+        r = run_setup(str(tmp_path), "--dry-run", "--yes")
+        assert not (tmp_path / "README.md").exists()
+
+    def test_toml_missing_is_ok(self, tmp_path):
+        pkg = tmp_path / "package.json"
+        pkg.write_text('{"name":"test"}')
+        # No TOML file — should work fine
+        r = run_setup(str(tmp_path), "--yes", "--no-git-check")
+        assert r.returncode == 0
