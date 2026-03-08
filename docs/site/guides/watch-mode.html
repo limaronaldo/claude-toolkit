@@ -4,22 +4,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Watch Mode — Claude Primer</title>
-  <link rel="stylesheet" href="/claude-primer/style.css">
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-  <nav>
-    <a href="/claude-primer/"><strong>Claude Primer</strong></a>
-    <a href="/claude-primer/guides/getting-started.html">Getting Started</a>
-    <a href="/claude-primer/guides/templates.html">Templates</a>
-    <a href="/claude-primer/guides/watch-mode.html">Watch Mode</a>
-    <a href="/claude-primer/guides/multi-agent.html">Multi-Agent</a>
-    <a href="/claude-primer/guides/plugins.html">Plugins</a>
-    <a href="/claude-primer/guides/config.html">Config</a>
-    <a href="/claude-primer/guides/cli-reference.html">CLI Reference</a>
-  </nav>
-
-  <h1>Watch Mode</h1>
+  <div class="site-wrapper">
+    <nav class="navbar">
+      <div class="nav-left">
+        <a href="/claude-primer/" class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z" fill="#D29A71" />
+          </svg>
+          <span class="logo-text">Claude Primer</span>
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="/claude-primer/guides/getting-started.html">Getting Started</a>
+        <a href="/claude-primer/guides/templates.html">Templates</a>
+        <a href="/claude-primer/guides/watch-mode.html">Watch Mode</a>
+        <a href="/claude-primer/guides/plugins.html">Plugins</a>
+      </div>
+      <div class="nav-right">
+        <a href="https://github.com/limaronaldo/claude-primer" class="btn btn-nav">View GitHub</a>
+      </div>
+    </nav>
+    <main class="main-content">
+      <section class="features-section" style="margin-top: 2rem;">
+<h1>Watch Mode</h1>
   <p>Monitor your project for changes and regenerate documentation automatically.</p>
 
   <h2>Basic Usage</h2>
@@ -56,9 +69,24 @@ claude-primer --watch --watch-auto --template-dir ./my-templates
 claude-primer --watch --watch-auto --agent all</code></pre>
 
   <p>Watch mode always runs with <code>--force</code> and <code>--git-mode skip</code> to avoid interactive prompts during regeneration.</p>
-
-  <footer>
-    <p>Claude Primer &mdash; <a href="https://github.com/limaronaldo/claude-primer">GitHub</a> &mdash; MIT License</p>
-  </footer>
+      </section>
+    </main>
+    <footer class="site-footer">
+      <div class="footer-content">
+        <div class="footer-left">
+          <a href="#" class="footer-logo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z" fill="#A8A49C" />
+            </svg>
+            Claude Primer
+          </a>
+        </div>
+        <div class="footer-links">
+          <span>&copy; 2026 Ronaldo Lima &mdash; MIT License</span>
+          <a href="https://github.com/limaronaldo/claude-primer">GitHub</a>
+        </div>
+      </div>
+    </footer>
+  </div>
 </body>
 </html>
