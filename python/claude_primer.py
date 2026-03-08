@@ -3459,6 +3459,9 @@ def run_watch(target: Path, interval: int = 5, auto: bool = False, **run_kwargs)
                 if auto:
                     print(f"  Auto-regenerating...")
                     run(target, **run_kwargs)
+                    # Re-snapshot after run() so our own writes don't re-trigger
+                    new_mtimes = _get_watch_targets(target)
+                    new_scan = scan_directory(target)
                 else:
                     print(f"  Run 'claude-primer --force' to regenerate.\n")
 

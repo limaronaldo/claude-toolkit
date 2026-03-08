@@ -3213,7 +3213,7 @@ async function runWatch(target, interval = 5, auto = false, runKwargs = {}) {
 
   while (true) {
     await sleep(interval * 1000);
-    const newMtimes = getWatchTargets(target);
+    let newMtimes = getWatchTargets(target);
     const changed = Object.keys(newMtimes).filter(k => newMtimes[k] !== mtimes[k]);
     const newFiles = Object.keys(newMtimes).filter(k => !(k in mtimes));
     const removedFiles = Object.keys(mtimes).filter(k => !(k in newMtimes));
@@ -3225,7 +3225,7 @@ async function runWatch(target, interval = 5, auto = false, runKwargs = {}) {
       for (const f of newFiles.sort()) console.log(`    Added: ${f}`);
       for (const f of removedFiles.sort()) console.log(`    Removed: ${f}`);
 
-      const newScan = scanDirectory(target);
+      let newScan = scanDirectory(target);
       const diffs = diffScanResults(lastScan, newScan);
       if (diffs.length) {
         console.log("  Impact:");
@@ -3235,6 +3235,9 @@ async function runWatch(target, interval = 5, auto = false, runKwargs = {}) {
       if (auto) {
         console.log("  Auto-regenerating...");
         await run(target, runKwargs);
+        // Re-snapshot after run() so our own writes don't re-trigger
+        newMtimes = getWatchTargets(target);
+        newScan = scanDirectory(target);
       } else {
         console.log("  Run 'claude-primer --force' to regenerate.\n");
       }
