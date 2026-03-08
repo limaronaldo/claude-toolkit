@@ -51,3 +51,16 @@ ignore = ["E501"]  # line length handled by formatter
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__",
+    "if TYPE_CHECKING",
+]

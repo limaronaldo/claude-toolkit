@@ -3338,6 +3338,8 @@ function parseArgs(argv) {
     agent: null,
     format: "markdown",
     diff: false,
+    check: false,
+    export: false,
     migrate: false,
     init: false,
     update: false,
@@ -3393,6 +3395,15 @@ function parseArgs(argv) {
         args.pluginDir = argv[i] || null;
         break;
       case "--diff": args.diff = true; break;
+      case "--check": args.check = true; break;
+      case "--export":
+        if (i + 1 < argv.length && !argv[i + 1].startsWith("-")) {
+          i++;
+          args.export = argv[i];
+        } else {
+          args.export = "claude-primer-export.md";
+        }
+        break;
       case "--telemetry-off": args.telemetryOff = true; break;
       case "--migrate": args.migrate = true; break;
       case "--init": args.init = true; break;
@@ -3423,6 +3434,9 @@ Usage:
   claude-primer --format markdown|yaml|json # output format for agent files
   claude-primer --plugin-dir <dir>         # plugin generators directory
   claude-primer --diff                      # show what would change (unified diff)
+  claude-primer --check                     # check if docs are up-to-date (CI-friendly)
+  claude-primer --export                    # export docs to claude-primer-export.md
+  claude-primer --export out.md             # export docs to custom file
   claude-primer --telemetry-off            # disable telemetry
   claude-primer --migrate                   # convert .claude-setup.rc to .claude-primer.toml
   claude-primer --init                      # interactively create .claude-primer.toml
@@ -3577,6 +3591,97 @@ function _runDiff(args) {
   if (!hasDiff) {
     console.log("  No differences — generated content matches existing files.");
   }
+}
+
+function _runCheck(args) {
+  const target = path.resolve(args.target);
+  if (!existsSync(target)) {
+    console.log("  Target directory does not exist — nothing to check.");
+    return false;
+  }
+
+  const info = scanDirectory(target);
+  const rc = loadRc(target);
+  if (rc && Object.keys(rc).length) applyRc(info, rc);
+  info.tier = detectProjectTier(info);
+
+  const tplDir = args.templateDir || path.join(target, ".claude-primer", "templates");
+  const userTemplates = existsSync(tplDir) ? loadTemplates(tplDir) : {};
+  if (Object.keys(userTemplates).length) {
+    info._templates = userTemplates;
+    info._templateVars = buildTemplateVariables(info);
+  }
+
+  const cleanRoot = args.cleanRoot;
+  const filesToGenerate = [...DEFAULT_FILES];
+  if (args.withReadme) filesToGenerate.push(["README.md", (i) => generateReadmeMd(i)]);
+
+  let staleCount = 0;
+  for (const [filename, generator] of filesToGenerate) {
+    let actualPath;
+    if (cleanRoot && filename !== "CLAUDE.md" && filename !== "README.md") {
+      actualPath = path.join(target, ".claude", "docs", filename);
+    } else {
+      actualPath = path.join(target, filename);
+    }
+
+    let newContent = generator(info);
+    if (Object.keys(userTemplates).length) {
+      newContent = mergeWithTemplates(newContent, userTemplates, info._templateVars || {}, filename);
+    }
+
+    if (!existsSync(actualPath)) {
+      console.log(`  MISSING  ${filename}`);
+      staleCount++;
+    } else {
+      const oldContent = fs.readFileSync(actualPath, "utf-8");
+      if (oldContent === newContent) {
+        console.log(`  OK  ${filename}`);
+      } else {
+        console.log(`  STALE  ${filename}`);
+        staleCount++;
+      }
+    }
+  }
+
+  if (staleCount === 0) {
+    console.log("  All files up-to-date.");
+    return true;
+  } else {
+    console.log(`  ${staleCount} file(s) stale or missing.`);
+    return false;
+  }
+}
+
+function _runExport(args) {
+  const target = path.resolve(args.target);
+  const outfile = typeof args.export === "string" ? args.export : "claude-primer-export.md";
+
+  const filesToCollect = ["CLAUDE.md", "STANDARDS.md", "QUICKSTART.md", "ERRORS_AND_LESSONS.md"];
+  if (args.withReadme) filesToCollect.push("README.md");
+
+  const agentFiles = [".cursor/rules/project.mdc", ".github/copilot-instructions.md",
+                      ".windsurfrules", ".aider/conventions.md", "AGENTS.md"];
+
+  const collected = [];
+  for (const fname of [...filesToCollect, ...agentFiles]) {
+    const cleanRoot = args.cleanRoot && !["CLAUDE.md", "README.md"].includes(fname);
+    const fpath = cleanRoot ? path.join(target, ".claude", "docs", fname) : path.join(target, fname);
+    if (existsSync(fpath)) {
+      collected.push({ name: fname, content: fs.readFileSync(fpath, "utf-8") });
+    }
+  }
+
+  if (!collected.length) {
+    console.log("  No generated files found to export.");
+    return;
+  }
+
+  // Write as combined markdown with separators
+  const output = collected.map(f => `<!-- FILE: ${f.name} -->\n${f.content}`).join("\n\n---\n\n");
+  fs.writeFileSync(outfile, output, "utf-8");
+  console.log(`  Exported ${collected.length} file(s) to ${outfile}`);
+  collected.forEach(f => console.log(`    ${f.name}`));
 }
 
 // ─────────────────────────────────────────────
@@ -3952,6 +4057,18 @@ async function main() {
   // Diff mode
   if (args.diff) {
     _runDiff(args);
+    return;
+  }
+
+  // Check mode
+  if (args.check) {
+    const ok = _runCheck(args);
+    process.exit(ok ? 0 : 1);
+  }
+
+  // Export mode
+  if (args.export) {
+    _runExport(args);
     return;
   }
 

@@ -1,0 +1,65 @@
+name: Bug Report
+description: Report a bug in claude-primer
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a bug! Please fill out the details below.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "Run `claude-primer --version` to get the version"
+      placeholder: "e.g., 1.7.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Installation Method
+      options:
+        - pip / pipx
+        - npm / npx
+        - Homebrew
+        - Scoop
+        - Binary download
+        - Docker
+        - Source
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Linux (x86_64)
+        - Linux (ARM64)
+        - Windows
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output / Logs
+      description: Paste any relevant output (use --dry-run or --diff to debug)
+      render: shell

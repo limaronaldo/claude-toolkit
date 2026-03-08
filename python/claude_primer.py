@@ -3615,6 +3615,110 @@ def _run_diff(target: Path, args):
         print("  No differences — generated content matches existing files.")
 
 
+def _run_check(target: Path, args):
+    """Check if generated docs are up-to-date. Returns True if all match, False otherwise."""
+    target = target.resolve()
+    if not target.exists():
+        print("  Target directory does not exist — nothing to check.")
+        return False
+
+    info = scan_directory(target)
+    rc = load_rc(target)
+    if rc:
+        info = apply_rc(info, rc)
+
+    info["tier"] = detect_project_tier(info)
+
+    tpl_dir = Path(args.template_dir) if args.template_dir else target / ".claude-primer" / "templates"
+    user_templates = load_templates(tpl_dir) if tpl_dir.is_dir() else {}
+    if user_templates:
+        info["_templates"] = user_templates
+        info["_template_vars"] = _build_template_variables(info)
+
+    clean_root = args.clean_root
+    files_to_generate = list(DEFAULT_FILES)
+    if args.with_readme:
+        files_to_generate.append(("README.md", generate_readme_md))
+
+    stale_count = 0
+    for filename, generator in files_to_generate:
+        if clean_root and filename not in ("CLAUDE.md", "README.md"):
+            actual_path = target / ".claude" / "docs" / filename
+        else:
+            actual_path = target / filename
+
+        new_content = generator(info)
+        if user_templates:
+            new_content = merge_with_templates(new_content, user_templates, info.get("_template_vars", {}), filename)
+
+        if not actual_path.exists():
+            print(f"  MISSING  {filename}")
+            stale_count += 1
+        else:
+            old_content = actual_path.read_text(encoding="utf-8", errors="ignore")
+            if old_content == new_content:
+                print(f"  OK  {filename}")
+            else:
+                print(f"  STALE  {filename}")
+                stale_count += 1
+
+    if stale_count == 0:
+        print("  All files up-to-date.")
+        return True
+    else:
+        print(f"  {stale_count} file(s) stale or missing.")
+        return False
+
+
+def _run_export(target: Path, args):
+    """Export generated docs to an archive file."""
+    import tarfile
+    import zipfile
+
+    target = target.resolve()
+    outfile = args.export
+
+    # Collect files that claude-primer generates
+    clean_root = args.clean_root
+    files_to_collect = ["CLAUDE.md", "STANDARDS.md", "QUICKSTART.md", "ERRORS_AND_LESSONS.md"]
+    if args.with_readme:
+        files_to_collect.append("README.md")
+
+    collected = []
+    for fname in files_to_collect:
+        if clean_root and fname not in ("CLAUDE.md", "README.md"):
+            fpath = target / ".claude" / "docs" / fname
+        else:
+            fpath = target / fname
+        if fpath.exists():
+            collected.append((fname, fpath))
+
+    # Also collect agent files if they exist
+    agent_patterns = [".cursor/rules/project.mdc", ".github/copilot-instructions.md",
+                      ".windsurfrules", ".aider/conventions.md", "AGENTS.md"]
+    for pattern in agent_patterns:
+        fpath = target / pattern
+        if fpath.exists():
+            collected.append((pattern, fpath))
+
+    if not collected:
+        print("  No generated files found to export.")
+        return
+
+    if outfile.endswith(".zip"):
+        with zipfile.ZipFile(outfile, "w", zipfile.ZIP_DEFLATED) as zf:
+            for name, fpath in collected:
+                zf.write(str(fpath), name)
+    else:
+        with tarfile.open(outfile, "w:gz") as tf:
+            for name, fpath in collected:
+                tf.add(str(fpath), arcname=name)
+
+    print(f"  Exported {len(collected)} file(s) to {outfile}")
+    for name, _ in collected:
+        print(f"    {name}")
+
+
 # ─────────────────────────────────────────────
 # TOML config file support
 # ─────────────────────────────────────────────
@@ -3986,6 +4090,9 @@ Examples:
   claude-primer --git-mode stash      # auto-stash, no prompt
   claude-primer --git-mode skip --yes # full automation
   claude-primer --plan-json           # output project analysis as JSON
+  claude-primer --check               # check if docs are up-to-date (CI-friendly)
+  claude-primer --export              # export docs to claude-primer-export.tar.gz
+  claude-primer --export out.zip      # export docs to zip archive
   claude-primer --migrate             # convert .claude-setup.rc to .claude-primer.toml
   claude-primer --init                # interactively create .claude-primer.toml
   claude-primer --update              # self-update to latest release
@@ -4027,6 +4134,10 @@ Examples:
                         help="Directory containing plugin generators (default: .claude-primer/plugins/)")
     parser.add_argument("--diff", action="store_true",
                         help="Show what would change without writing (unified diff)")
+    parser.add_argument("--check", action="store_true",
+                        help="Check if generated docs are up-to-date (exit 1 if stale)")
+    parser.add_argument("--export", nargs="?", const="claude-primer-export.tar.gz", metavar="FILE",
+                        help="Export generated docs to archive (default: claude-primer-export.tar.gz)")
     parser.add_argument("--telemetry-off", action="store_true",
                         help="Disable telemetry even if CLAUDE_PRIMER_TELEMETRY=1 is set")
     parser.add_argument("--migrate", action="store_true",
@@ -4067,6 +4178,16 @@ Examples:
     # ── Diff mode ──
     if args.diff:
         _run_diff(Path(args.target), args)
+        return
+
+    # ── Check mode ──
+    if args.check:
+        ok = _run_check(Path(args.target), args)
+        sys.exit(0 if ok else 1)
+
+    # ── Export mode ──
+    if args.export:
+        _run_export(Path(args.target), args)
         return
 
     # Parse agent list

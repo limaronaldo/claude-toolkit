@@ -2,8 +2,9 @@
 
 [![PyPI](https://img.shields.io/pypi/v/claude-primer)](https://pypi.org/project/claude-primer/)
 [![npm](https://img.shields.io/npm/v/claude-primer)](https://www.npmjs.com/package/claude-primer)
-[![CI](https://github.com/limaronaldo/claude-primer/actions/workflows/ci.yml/badge.svg)](https://github.com/limaronaldo/claude-primer/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/limaronaldo/claude-primer)](https://github.com/limaronaldo/claude-primer/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/limaronaldo/claude-primer)
 
 Prime your repo for Claude Code.
 
@@ -174,6 +175,10 @@ claude-primer/
     ├── package.json
     └── tests/
 ```
+
+## Who Uses This
+
+Claude Primer is designed for any team or developer using Claude Code, Cursor, Copilot, Windsurf, Aider, or Codex who wants their AI assistant to deeply understand their codebase from the first prompt.
 
 ## Authors
 
