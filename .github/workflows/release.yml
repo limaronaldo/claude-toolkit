@@ -25,7 +25,12 @@ jobs:
       - name: Sync plugin files
         run: |
           rm -rf npm/plugin
-          cp -r plugins/multi-agent-orchestrator npm/plugin
+          mkdir -p npm/plugin
+          cp -r plugins/multi-agent-orchestrator/agents npm/plugin/agents
+          cp -r plugins/multi-agent-orchestrator/commands npm/plugin/commands
+          cp -r plugins/multi-agent-orchestrator/skills npm/plugin/skills
+          cp -r plugins/multi-agent-orchestrator/.claude-plugin npm/plugin/.claude-plugin
+          cp plugins/multi-agent-orchestrator/README.md npm/plugin/README.md
 
       - name: Check if version already published
         id: check
