@@ -1,0 +1,34 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "mao-marketplace",
+  "version": "1.0.0",
+  "metadata": {
+    "description": "Multi-Agent Orchestrator (MAO) — Intelligent model tiering, DAG scheduling, git worktrees, and self-correction loops for Claude Code",
+    "homepage": "https://github.com/aiconnai/mao-marketplace"
+  },
+  "owner": {
+    "name": "aiconnai"
+  },
+  "plugins": [
+    {
+      "name": "multi-agent-orchestrator",
+      "description": "Orchestrates multi-agent workflows with Opus/Sonnet/Haiku model tiering, DAG-based task scheduling, git worktrees for parallelism, and self-correction loops. Use for complex features, system design, large refactoring, or any task that benefits from decomposition into parallel subtasks.",
+      "version": "1.0.0",
+      "source": "./plugins/multi-agent-orchestrator",
+      "author": {
+        "name": "aiconnai"
+      },
+      "category": "workflow",
+      "tags": [
+        "multi-agent",
+        "orchestration",
+        "model-tiering",
+        "parallel",
+        "worktrees",
+        "self-correction",
+        "cost-optimization"
+      ],
+      "strict": true
+    }
+  ]
+}
