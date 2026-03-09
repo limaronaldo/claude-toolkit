@@ -1,6 +1,6 @@
 # Multi-Agent Orchestrator (MAO)
 
-A Claude Code skill for orchestrating multi-agent workflows with intelligent model
+A Claude Code plugin for orchestrating multi-agent workflows with intelligent model
 tiering, git worktrees, and self-correction loops.
 
 ## Installation
@@ -16,20 +16,20 @@ tiering, git worktrees, and self-correction loops.
 ### Manual Installation
 
 ```bash
-# Copy agents to your project
+# From your project root:
+mkdir -p .claude/agents .claude/skills
+
+# Copy agents
 cp agents/*.md .claude/agents/
 
 # Copy skill
-mkdir -p .claude/skills
 cp -r skills/multi-agent-orchestrator .claude/skills/
 
-# Add orchestrator to .gitignore
+# Add orchestrator state to .gitignore
 echo ".orchestrator/" >> .gitignore
 ```
 
 ## Recommended Model Configuration
-
-For best results, start your Claude Code session with `opusplan`:
 
 ```bash
 claude --model opusplan
@@ -37,24 +37,50 @@ claude --model opusplan
 
 This automatically uses Opus for planning and Sonnet for execution.
 
-## Quick Test
+## Usage
 
-After installation, test with:
+### Automatic — Describe a Complex Task
+
+MAO activates automatically for multi-file, multi-concern tasks:
 
 ```
-> Use the mao-architect to decompose: "Create a REST API endpoint 
+> Implement JWT authentication with refresh token rotation, rate limiting,
+  and brute-force protection for the API
+```
+
+### Explicit — Invoke Agents Directly
+
+```
+> Use the mao-architect to decompose: "Create a REST API endpoint
   for user registration with email validation and password hashing"
 ```
 
-You should see the architect create a task-graph.json with 4-6 tasks,
-most assigned to Haiku or Sonnet.
+### Available Agent Commands
 
-## Structure
+| Command | What It Does |
+|---------|-------------|
+| `Use the mao-architect to decompose: "..."` | Break a problem into a task DAG with complexity scores |
+| `Use the mao-orchestrator to execute the task graph` | Schedule and run tasks from an existing task-graph.json |
+| `Use the mao-reviewer to review the changes` | Cross-agent code review for security, performance, design |
+| `Use the mao-reflector to analyze the run` | Meta-analysis and pattern learning (for complex runs) |
+
+### What Happens Under the Hood
+
+1. **Architect** (Opus) creates `.orchestrator/state/task-graph.json` — atomic tasks, DAG dependencies, complexity scores, model assignments
+2. **Orchestrator** (Sonnet) validates the DAG, sets up git worktrees, spawns executor agents
+3. **Workers/Implementers** (Haiku/Sonnet) execute tasks in parallel worktrees with self-review
+4. **Verifier** (Haiku) runs type-check → tests → lint → format on each task
+5. **Reviewer** (Sonnet) does cross-agent code review, may create correction tasks
+6. **Reflector** (Opus) analyzes the run and updates routing patterns (8+ task runs only)
+7. **Merge** — worktrees merged in dependency order, conflicts resolved, worktrees cleaned up
+
+## Plugin Structure
 
 ```
 multi-agent-orchestrator/
-├── SKILL.md                    # Core skill definition
-├── agents/                     # Custom agent definitions
+├── .claude-plugin/plugin.json  # Plugin manifest
+├── README.md                   # This file
+├── agents/                     # 8 agent definitions
 │   ├── mao-architect.md        # Opus — problem decomposition
 │   ├── mao-orchestrator.md     # Sonnet — coordination
 │   ├── mao-implementer.md      # Sonnet — feature building
@@ -63,19 +89,45 @@ multi-agent-orchestrator/
 │   ├── mao-reviewer.md         # Sonnet — code review
 │   ├── mao-reflector.md        # Opus — meta-analysis
 │   └── mao-explorer.md         # Sonnet — parallel solution search
-├── references/                 # Detailed docs (loaded as needed)
-│   ├── task-decomposition.md
-│   ├── dag-scheduler.md
-│   ├── model-routing.md
-│   ├── self-correction.md
-│   └── worktree-ops.md
-├── scripts/
-│   ├── setup-worktrees.sh
-│   └── merge-worktrees.sh
-└── templates/
-    ├── task-graph-template.json
-    └── CLAUDE-md-snippet.md
+│
+└── skills/
+    └── multi-agent-orchestrator/
+        ├── SKILL.md             # Core skill definition (7 phases)
+        ├── references/          # Deep-dive docs (lazy-loaded as needed)
+        │   ├── task-decomposition.md
+        │   ├── dag-scheduler.md
+        │   ├── model-routing.md
+        │   ├── self-correction.md
+        │   └── worktree-ops.md
+        ├── scripts/
+        │   ├── setup-worktrees.sh
+        │   └── merge-worktrees.sh
+        └── templates/
+            ├── task-graph-template.json
+            └── CLAUDE-md-snippet.md
 ```
+
+## Complexity Scoring & Model Routing
+
+Tasks are scored and routed to the cheapest capable model:
+
+```
+score = files_touched × 1 + new_logic × 3 + security_risk × 5 + concurrency × 5
+```
+
+| Score | Model | Typical Tasks |
+|-------|-------|---------------|
+| 0-3 | Haiku | Migrations, CRUD, boilerplate, docs, config |
+| 4-7 | Sonnet | Features, refactoring, integration, complex tests |
+| 8-14 | Opus | Security logic, concurrency, novel algorithms |
+
+## Self-Correction (5 Layers)
+
+1. **Reflexion** — Agents self-review before reporting done (free)
+2. **Verification** — Haiku runs deterministic test/lint pipeline (cheap)
+3. **Peer Review** — Sonnet reviews code for design issues (medium)
+4. **Escalation** — On 2 failures: haiku → sonnet → opus (expensive)
+5. **Exploration** — 3 parallel Sonnet explorers with different strategies (last resort)
 
 ## Cost Expectations
 
@@ -89,5 +141,20 @@ For a typical complex feature (8-12 tasks):
 
 vs. all-Opus baseline: **~60-70% savings**
 
-The savings come from routing mechanical work (migrations, CRUD, tests, docs)
-to Haiku instead of using Opus for everything.
+## Resource Limits
+
+- Max parallel agents: 4-6
+- Max Opus concurrent: 1 | Max Sonnet: 3 | Max Haiku: 4
+- Max Opus invocations per run: 5
+- Max retries per task: 2
+- Escalation budget: 3 per run
+- Max total tasks: 20
+
+## CLAUDE.md Integration
+
+After installation, optionally add MAO configuration to your project's `CLAUDE.md`
+using the template at `templates/CLAUDE-md-snippet.md`.
+
+## License
+
+MIT
