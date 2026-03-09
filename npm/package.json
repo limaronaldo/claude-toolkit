@@ -1,6 +1,6 @@
 {
   "name": "mao-orchestrator",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Multi-Agent Orchestrator for Claude Code — install agents, commands, and skills",
   "type": "module",
   "bin": {
@@ -8,6 +8,7 @@
   },
   "files": [
     "index.mjs",
+    "README.md",
     "plugin/**"
   ],
   "keywords": [
