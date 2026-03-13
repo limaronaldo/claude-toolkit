@@ -1,5 +1,5 @@
 {
-  "name": "claude-toolkit",
+  "name": "claude-supertools",
   "version": "1.0.0",
   "description": "Unified CLI for Claude Code — combines Claude Primer + MAO Orchestrator",
   "type": "module",

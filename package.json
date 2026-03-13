@@ -10,7 +10,7 @@
     "test": "npm --workspaces test",
     "test:primer": "npm -w claude-primer test",
     "test:mao": "npm -w mao-orchestrator test",
-    "test:toolkit": "npm -w claude-toolkit test"
+    "test:toolkit": "npm -w claude-supertools test"
   },
   "engines": {
     "node": ">=18.0.0"
