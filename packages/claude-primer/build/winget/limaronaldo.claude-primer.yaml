@@ -12,11 +12,11 @@ Tags:
   - developer-tools
   - documentation
   - ai
-PackageUrl: https://github.com/limaronaldo/claude-primer
-LicenseUrl: https://github.com/limaronaldo/claude-primer/blob/main/LICENSE
+PackageUrl: https://github.com/limaronaldo/claude-toolkit
+LicenseUrl: https://github.com/limaronaldo/claude-toolkit/blob/main/LICENSE
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/limaronaldo/claude-primer/releases/download/v1.8.0/claude-primer-windows-x86_64.exe
+    InstallerUrl: https://github.com/limaronaldo/claude-toolkit/releases/download/v1.8.0/claude-primer-windows-x86_64.exe
     InstallerSha256: d1f80e4550cdd0489ae1b78a3e0c4e47fe94e90d580ff11cf5fa166d277c44da
     InstallerType: portable
     Commands:

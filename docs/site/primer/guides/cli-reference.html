@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>CLI Reference — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>CLI Reference</h1>
+
+                    <h2>Synopsis</h2>
+                    <pre><code>claude-primer [target] [options]</code></pre>
+
+                    <h2>Positional Arguments</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Argument</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>target</code></td>
+                                <td>
+                                    Target directory (default: current
+                                    directory)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Core Options</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--dry-run</code></td>
+                                <td>Preview changes without writing files</td>
+                            </tr>
+                            <tr>
+                                <td><code>--force</code></td>
+                                <td>
+                                    Overwrite existing files (skip unchanged)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--force-all</code></td>
+                                <td>Overwrite all files unconditionally</td>
+                            </tr>
+                            <tr>
+                                <td><code>--yes</code>, <code>-y</code></td>
+                                <td>Accept defaults, no interactive prompts</td>
+                            </tr>
+                            <tr>
+                                <td><code>--plan-json</code></td>
+                                <td>
+                                    Output project analysis as JSON without
+                                    writing
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--check</code></td>
+                                <td>
+                                    Check if generated docs are up-to-date
+                                    (exit 1 if stale)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--export [FILE]</code></td>
+                                <td>
+                                    Export docs to a file (default:
+                                    <code>claude-primer-export.md</code>,
+                                    combined markdown). Specify
+                                    <code>out.tar.gz</code> or
+                                    <code>out.zip</code> to produce an archive
+                                    instead.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--reconfigure</code></td>
+                                <td>
+                                    Re-run wizard (ignores saved
+                                    .claude-setup.rc)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Content Options</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--with-readme</code></td>
+                                <td>Include README.md in generated files</td>
+                            </tr>
+                            <tr>
+                                <td><code>--with-ralph</code></td>
+                                <td>Generate Ralph integration files</td>
+                            </tr>
+                            <tr>
+                                <td><code>--from-doc &lt;file|URL&gt;</code></td>
+                                <td>
+                                    Bootstrap from an existing document (PRD,
+                                    spec, etc.). Accepts local file paths and
+                                    HTTP/HTTPS URLs.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--clean-root</code></td>
+                                <td>Move auxiliary docs to .claude/docs/</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Git Safety</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--no-git-check</code></td>
+                                <td>Skip git safety entirely</td>
+                            </tr>
+                            <tr>
+                                <td><code>--git-mode ask|stash|skip</code></td>
+                                <td>Git safety mode (default: ask)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Template System</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--template-dir &lt;dir&gt;</code></td>
+                                <td>
+                                    Template overrides directory (default:
+                                    .claude-primer/templates/)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Watch Mode</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--watch</code></td>
+                                <td>
+                                    Watch for changes and suggest updates
+                                    (poll-based)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <code>--watch-interval &lt;secs&gt;</code>
+                                </td>
+                                <td>
+                                    Polling interval in seconds (default: 5)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>--watch-auto</code></td>
+                                <td>Auto-regenerate without confirmation</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Multi-Agent Output</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--agent &lt;agents&gt;</code></td>
+                                <td>
+                                    Target agents: claude, cursor, copilot,
+                                    windsurf, aider, codex, all
+                                    (comma-separated)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <code>--format json|yaml|markdown</code>
+                                </td>
+                                <td>
+                                    Output format for generated files
+                                    (default: markdown). JSON and YAML
+                                    produce structured knowledge files.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Plugin System</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--plugin-dir &lt;dir&gt;</code></td>
+                                <td>
+                                    Plugin generators directory (default:
+                                    .claude-primer/plugins/)
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Diff and Config</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--diff</code></td>
+                                <td>
+                                    Show what would change without writing
+                                    (unified diff). Fixed in v1.8.1: no longer
+                                    loops infinitely when comparing an empty
+                                    file to new content (npm).
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        See also:
+                        <a href="/claude-primer/guides/config.html"
+                            >Config File</a
+                        >
+                        for <code>.claude-primer.toml</code> usage.
+                    </p>
+
+                    <h2>Telemetry</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Flag / Env Var</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>--telemetry-off</code></td>
+                                <td>
+                                    Disable telemetry even if env var is set
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>CLAUDE_PRIMER_TELEMETRY=1</code></td>
+                                <td>
+                                    Opt-in to anonymous usage analytics. When
+                                    opted in, all standalone commands
+                                    (<code>--check</code>,
+                                    <code>--export</code>,
+                                    <code>--migrate</code>,
+                                    <code>--init</code>,
+                                    <code>--update</code>,
+                                    <code>--diff</code>) emit telemetry events.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Examples</h2>
+                    <pre><code># Full automation: no prompts, overwrite all, skip git
+claude-primer /path/to/repo --force-all --yes --no-git-check
+
+# Generate for all AI tools
+claude-primer --agent all --yes
+
+# Watch with auto-regeneration and custom templates
+claude-primer --watch --watch-auto --template-dir ./templates
+
+# Show what changed since last generation
+claude-primer --diff
+
+# CI/CD pipeline usage
+claude-primer /workspace --yes --no-git-check --plan-json > analysis.json</code></pre>
+
+                    <h3>Structured Output</h3>
+                    <pre><code># JSON knowledge file
+claude-primer --format json --yes
+
+# YAML knowledge file
+claude-primer --format yaml --yes
+
+# Check freshness in CI
+claude-primer --check --no-git-check
+
+# Export as combined markdown (default)
+claude-primer --export
+
+# Export as zip or tar.gz archive
+claude-primer --export docs-bundle.zip
+claude-primer --export docs-bundle.tar.gz</code></pre>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

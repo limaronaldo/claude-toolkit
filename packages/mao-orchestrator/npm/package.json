@@ -27,9 +27,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/aiconnai/mao-marketplace.git"
+    "url": "git+https://github.com/limaronaldo/claude-toolkit.git",
+    "directory": "packages/mao-orchestrator/npm"
   },
-  "homepage": "https://aiconnai.github.io/mao-marketplace/",
+  "homepage": "https://github.com/limaronaldo/claude-toolkit/tree/main/packages/mao-orchestrator#readme",
   "engines": {
     "node": ">=18.0.0"
   }

@@ -9,7 +9,7 @@
   "keywords": ["claude", "claude-code", "documentation", "bootstrap", "ai"],
   "license": "MIT",
   "engines": { "node": ">=18.0.0" },
-  "repository": { "type": "git", "url": "git+https://github.com/limaronaldo/claude-primer.git" },
-  "homepage": "https://github.com/limaronaldo/claude-primer#readme",
-  "bugs": { "url": "https://github.com/limaronaldo/claude-primer/issues" }
+  "repository": { "type": "git", "url": "git+https://github.com/limaronaldo/claude-toolkit.git", "directory": "packages/claude-primer/npm" },
+  "homepage": "https://github.com/limaronaldo/claude-toolkit/tree/main/packages/claude-primer#readme",
+  "bugs": { "url": "https://github.com/limaronaldo/claude-toolkit/issues" }
 }

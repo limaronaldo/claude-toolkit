@@ -32,8 +32,9 @@ classifiers = [
 claude-primer = "claude_primer:main"
 
 [project.urls]
-Homepage = "https://github.com/limaronaldo/claude-primer"
-Issues = "https://github.com/limaronaldo/claude-primer/issues"
+Homepage = "https://github.com/limaronaldo/claude-toolkit/tree/main/packages/claude-primer"
+Repository = "https://github.com/limaronaldo/claude-toolkit"
+Issues = "https://github.com/limaronaldo/claude-toolkit/issues"
 
 [tool.hatch.build.targets.sdist]
 include = ["claude_primer.py", "README.md", "LICENSE"]

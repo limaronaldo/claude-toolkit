@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+*.egg
+dist/
+build/
+!packages/claude-primer/build/
+packages/claude-primer/build/*
+!packages/claude-primer/build/pyinstaller.spec
+!packages/claude-primer/build/winget/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Claude
+.claude/
+
+# Generated output (claude-primer creates these in target dirs)
+CLAUDE.md
+STANDARDS.md
+QUICKSTART.md
+ERRORS_AND_LESSONS.md
+.claude-setup.rc
+.ralph/
+.ralphrc
+.env.local
+
+# Orchestrator state
+.orchestrator/
+
+# OS
+.DS_Store

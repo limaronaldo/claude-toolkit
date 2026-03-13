@@ -1,0 +1,65 @@
+name: CI — Claude Primer
+
+on:
+  push:
+    branches: [main]
+    paths: ['packages/claude-primer/**']
+  pull_request:
+    paths: ['packages/claude-primer/**']
+
+jobs:
+  lint-python:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check packages/claude-primer/python/
+      - run: ruff format --check packages/claude-primer/python/
+
+  lint-npm:
+    name: Lint Node
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd packages/claude-primer/npm && npm install --save-dev eslint
+      - run: cd packages/claude-primer/npm && npx eslint index.mjs
+
+  test-python:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install pytest pytest-cov
+      - run: cd packages/claude-primer/python && python -m pytest tests/ -v --cov=. --cov-report=xml
+      - name: Upload coverage artifact
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: packages/claude-primer/python/coverage.xml
+
+  test-npm:
+    name: Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: cd packages/claude-primer/npm && node --test tests/claude_primer.test.mjs

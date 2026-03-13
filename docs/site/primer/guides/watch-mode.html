@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Watch Mode — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>Watch Mode</h1>
+                    <p>
+                        Monitor your project for changes and regenerate
+                        documentation automatically.
+                    </p>
+
+                    <h2>Basic Usage</h2>
+                    <pre><code># Watch with manual confirmation on each change
+claude-primer --watch
+
+# Auto-regenerate without prompts
+claude-primer --watch --watch-auto
+
+# Custom polling interval (default: 5 seconds)
+claude-primer --watch --watch-interval 10</code></pre>
+
+                    <h2>How It Works</h2>
+                    <ol>
+                        <li>Performs an initial scan and generation</li>
+                        <li>
+                            Monitors key project files (package.json,
+                            requirements.txt, etc.) for modifications
+                        </li>
+                        <li>When changes are detected, reports what changed</li>
+                        <li>
+                            Regenerates documentation (with confirmation unless
+                            <code>--watch-auto</code> is set)
+                        </li>
+                    </ol>
+
+                    <h2>Watched Files</h2>
+                    <p>
+                        Watch mode monitors files that affect project detection:
+                    </p>
+                    <ul>
+                        <li>
+                            Package manifests: <code>package.json</code>,
+                            <code>requirements.txt</code>,
+                            <code>pyproject.toml</code>,
+                            <code>Cargo.toml</code>, <code>go.mod</code>
+                        </li>
+                        <li>
+                            Config files: <code>Dockerfile</code>,
+                            <code>docker-compose.yml</code>,
+                            <code>Makefile</code>
+                        </li>
+                        <li>
+                            CI configs: <code>.github/workflows/*.yml</code>
+                        </li>
+                    </ul>
+
+                    <h2>Combining with Other Flags</h2>
+                    <pre><code># Watch with template overrides
+claude-primer --watch --watch-auto --template-dir ./my-templates
+
+# Watch and also generate agent context
+claude-primer --watch --watch-auto --agent all</code></pre>
+
+                    <p>
+                        Watch mode always runs with <code>--force</code> and
+                        <code>--git-mode skip</code> to avoid interactive
+                        prompts during regeneration.
+                    </p>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

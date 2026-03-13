@@ -1,0 +1,80 @@
+name: Release — MAO Orchestrator
+
+on:
+  push:
+    tags: ['mao-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Validate
+    uses: ./.github/workflows/ci-mao.yml
+
+  publish-npm:
+    name: Publish to npm
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Sync plugin files
+        run: |
+          rm -rf packages/mao-orchestrator/npm/plugin
+          mkdir -p packages/mao-orchestrator/npm/plugin
+          cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/agents packages/mao-orchestrator/npm/plugin/agents
+          cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/commands packages/mao-orchestrator/npm/plugin/commands
+          cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/skills packages/mao-orchestrator/npm/plugin/skills
+          cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/.claude-plugin packages/mao-orchestrator/npm/plugin/.claude-plugin
+          cp packages/mao-orchestrator/plugins/multi-agent-orchestrator/README.md packages/mao-orchestrator/npm/plugin/README.md
+
+      - name: Check if version already published
+        id: check
+        working-directory: packages/mao-orchestrator/npm
+        run: |
+          LOCAL=$(node -e "console.log(require('./package.json').version)")
+          REMOTE=$(npm view mao-orchestrator version 2>/dev/null || echo "0.0.0")
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Version $LOCAL already published — skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Publishing $LOCAL (remote: $REMOTE)"
+          fi
+
+      - name: Publish
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/mao-orchestrator/npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  attach-assets:
+    name: Attach Release Assets
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create tar.gz
+        run: |
+          VERSION="${GITHUB_REF_NAME#mao-v}"
+          tar -czf "mao-orchestrator-v${VERSION}.tar.gz" \
+            -C packages/mao-orchestrator/plugins multi-agent-orchestrator
+          sha256sum "mao-orchestrator-v${VERSION}.tar.gz" > checksums-sha256.txt
+
+      - name: Upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            mao-orchestrator-*.tar.gz
+            checksums-sha256.txt

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Config File — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>Config File</h1>
+                    <p>
+                        Persist CLI flag defaults in a
+                        <code>.claude-primer.toml</code> file at your project
+                        root.
+                    </p>
+
+                    <h2>Setup</h2>
+                    <p>
+                        Create a <code>.claude-primer.toml</code> file in your
+                        project root:
+                    </p>
+                    <pre><code># .claude-primer.toml
+
+[flags]
+force = true
+with_readme = true
+clean_root = true
+agent = "all"
+format = "markdown"</code></pre>
+
+                    <h2>Supported Flags</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TOML Key</th>
+                                <th>CLI Equivalent</th>
+                                <th>Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>force</code></td>
+                                <td><code>--force</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>force_all</code></td>
+                                <td><code>--force-all</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>dry_run</code></td>
+                                <td><code>--dry-run</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>with_readme</code></td>
+                                <td><code>--with-readme</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>with_ralph</code></td>
+                                <td><code>--with-ralph</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>no_git_check</code></td>
+                                <td><code>--no-git-check</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>clean_root</code></td>
+                                <td><code>--clean-root</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>git_mode</code></td>
+                                <td><code>--git-mode</code></td>
+                                <td>string</td>
+                            </tr>
+                            <tr>
+                                <td><code>template_dir</code></td>
+                                <td><code>--template-dir</code></td>
+                                <td>string</td>
+                            </tr>
+                            <tr>
+                                <td><code>plugin_dir</code></td>
+                                <td><code>--plugin-dir</code></td>
+                                <td>string</td>
+                            </tr>
+                            <tr>
+                                <td><code>agent</code></td>
+                                <td><code>--agent</code></td>
+                                <td>string</td>
+                            </tr>
+                            <tr>
+                                <td><code>format</code></td>
+                                <td><code>--format</code></td>
+                                <td>string</td>
+                            </tr>
+                            <tr>
+                                <td><code>watch</code></td>
+                                <td><code>--watch</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>watch_auto</code></td>
+                                <td><code>--watch-auto</code></td>
+                                <td>boolean</td>
+                            </tr>
+                            <tr>
+                                <td><code>watch_interval</code></td>
+                                <td><code>--watch-interval</code></td>
+                                <td>integer</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Precedence</h2>
+                    <p>
+                        CLI flags always override TOML values. TOML values only
+                        apply when the CLI flag is at its default.
+                    </p>
+                    <pre><code># TOML says force = true, but CLI says --dry-run
+# Result: dry-run mode (CLI wins), force is also set from TOML
+claude-primer --dry-run</code></pre>
+
+                    <h2>Diff Mode</h2>
+                    <p>
+                        Use <code>--diff</code> to preview what would change
+                        without writing any files:
+                    </p>
+                    <pre><code># Show unified diff of changes
+claude-primer --diff
+
+# Combine with other flags
+claude-primer --diff --with-readme --clean-root</code></pre>
+                    <p>
+                        Output is in unified diff format, showing additions and
+                        removals per file.
+                    </p>
+
+                    <h2>Migration from .claude-setup.rc</h2>
+                    <p>
+                        The <code>.claude-setup.rc</code> file (INI format) is
+                        still supported for wizard answers. The
+                        <code>.claude-primer.toml</code> file is for CLI flag
+                        defaults only. Both can coexist.
+                    </p>
+
+                    <h2>Workspace Inheritance</h2>
+                    <p>
+                        Config files in parent directories apply as defaults
+                        to subdirectories. The closest config wins — child
+                        settings override parent settings.
+                    </p>
+                    <pre><code># Monorepo example:
+# /myproject/.claude-primer.toml        ← shared defaults
+# /myproject/frontend/.claude-primer.toml  ← frontend overrides
+# /myproject/backend/                    ← inherits from root</code></pre>
+                    <p>
+                        Claude Primer walks up the directory tree from the
+                        target, collecting all <code>.claude-primer.toml</code>
+                        files. Settings merge from furthest ancestor to closest
+                        child, so you can set team-wide defaults at the root
+                        and override per-package.
+                    </p>
+                    <pre><code># Root config: /myproject/.claude-primer.toml
+[flags]
+force = true
+with_readme = true
+git_mode = "skip"
+
+# Frontend override: /myproject/frontend/.claude-primer.toml
+[flags]
+clean_root = true
+# force and with_readme inherited from root</code></pre>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

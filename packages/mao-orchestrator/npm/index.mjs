@@ -273,7 +273,7 @@ function showHelp() {
     mao-orchestrator --help           Show this help
     mao-orchestrator --version        Show version
 
-  More info: https://github.com/aiconnai/mao-marketplace
+  More info: https://github.com/limaronaldo/claude-toolkit
 `);
 }
 

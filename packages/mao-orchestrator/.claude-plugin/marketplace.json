@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "metadata": {
     "description": "Multi-Agent Orchestrator (MAO) — Intelligent model tiering, DAG scheduling, git worktrees, and self-correction loops for Claude Code",
-    "homepage": "https://github.com/aiconnai/mao-marketplace"
+    "homepage": "https://github.com/limaronaldo/claude-toolkit"
   },
   "owner": {
     "name": "aiconnai"

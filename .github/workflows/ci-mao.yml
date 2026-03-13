@@ -1,0 +1,74 @@
+name: CI — MAO Orchestrator
+
+on:
+  push:
+    branches: [main]
+    paths: ['packages/mao-orchestrator/**']
+  pull_request:
+    paths: ['packages/mao-orchestrator/**']
+
+jobs:
+  validate-json:
+    name: Validate JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON files
+        run: |
+          echo "Validating marketplace.json..."
+          python3 -c "import json; json.load(open('packages/mao-orchestrator/.claude-plugin/marketplace.json'))"
+
+          echo "Validating plugin.json..."
+          python3 -c "import json; json.load(open('packages/mao-orchestrator/plugins/multi-agent-orchestrator/.claude-plugin/plugin.json'))"
+
+          echo "Validating task-graph template..."
+          python3 -c "import json; json.load(open('packages/mao-orchestrator/plugins/multi-agent-orchestrator/skills/multi-agent-orchestrator/templates/task-graph-template.json'))"
+
+          echo "All JSON files valid."
+
+  validate-structure:
+    name: Validate Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check required files exist
+        run: |
+          BASE="packages/mao-orchestrator/plugins/multi-agent-orchestrator"
+          required=(
+            "$BASE/agents/mao-architect.md"
+            "$BASE/agents/mao-orchestrator.md"
+            "$BASE/agents/mao-implementer.md"
+            "$BASE/agents/mao-worker.md"
+            "$BASE/agents/mao-verifier.md"
+            "$BASE/agents/mao-reviewer.md"
+            "$BASE/agents/mao-reflector.md"
+            "$BASE/agents/mao-explorer.md"
+            "$BASE/commands/mao.md"
+            "$BASE/commands/mao-plan.md"
+            "$BASE/commands/mao-status.md"
+            "$BASE/skills/multi-agent-orchestrator/SKILL.md"
+          )
+          missing=0
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            echo "Some required files are missing!"
+            exit 1
+          fi
+          echo "All required files present."
+
+  lint-shell:
+    name: Lint Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          find packages/mao-orchestrator -name "*.sh" -not -path "*/.git/*" | while read -r f; do
+            echo "Checking $f..."
+            shellcheck "$f" || true
+          done

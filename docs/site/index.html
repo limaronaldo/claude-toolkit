@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Toolkit — AI-Assisted Development for Claude Code</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f97316;
+      --accent2: #3b82f6;
+      --accent3: #10b981;
+      --card-bg: #161b22;
+      --border: #30363d;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+    header { text-align: center; padding: 4rem 0 2rem; }
+    header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    header p { color: var(--muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0; }
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; text-decoration: none; color: inherit; transition: border-color 0.2s; }
+    .card:hover { border-color: var(--accent); }
+    .card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .card p { color: var(--muted); font-size: 0.9rem; }
+    .card .tag { display: inline-block; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; margin-top: 0.75rem; }
+    .tag-primer { background: rgba(249, 115, 22, 0.15); color: var(--accent); }
+    .tag-mao { background: rgba(59, 130, 246, 0.15); color: var(--accent2); }
+    .tag-toolkit { background: rgba(16, 185, 129, 0.15); color: var(--accent3); }
+    .quickstart { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 2rem 0; }
+    .quickstart h2 { margin-bottom: 1rem; }
+    code { background: #1c2128; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #1c2128; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 0.5rem 0; }
+    pre code { background: none; padding: 0; }
+    footer { text-align: center; padding: 3rem 0; color: var(--muted); font-size: 0.85rem; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Claude Toolkit</h1>
+      <p>A suite of tools for AI-assisted development with Claude Code. Prime your codebase, orchestrate multi-agent workflows, or use both together.</p>
+    </header>
+
+    <div class="cards">
+      <a href="primer/" class="card">
+        <h2>Claude Primer</h2>
+        <p>Scans your codebase and generates context-aware knowledge architecture — CLAUDE.md, STANDARDS.md, QUICKSTART.md, and ERRORS_AND_LESSONS.md.</p>
+        <span class="tag tag-primer">Knowledge</span>
+      </a>
+
+      <a href="mao/" class="card">
+        <h2>MAO Orchestrator</h2>
+        <p>Multi-Agent Orchestrator with intelligent Opus/Sonnet/Haiku model tiering, DAG-based task scheduling, and git worktree parallelism.</p>
+        <span class="tag tag-mao">Orchestration</span>
+      </a>
+
+      <a href="https://github.com/limaronaldo/claude-toolkit/tree/main/packages/claude-toolkit" class="card">
+        <h2>Claude Toolkit</h2>
+        <p>Unified CLI that combines Primer + MAO in one command. Prime your project and install agents with a single <code>claude-toolkit init</code>.</p>
+        <span class="tag tag-toolkit">Unified</span>
+      </a>
+    </div>
+
+    <div class="quickstart">
+      <h2>Quick Start</h2>
+      <pre><code># Full setup (recommended)
+npx claude-toolkit init
+
+# Or install individually
+npx claude-primer              # Generate knowledge docs
+npx mao-orchestrator init      # Install multi-agent orchestrator</code></pre>
+    </div>
+
+    <footer>
+      <p>MIT License &mdash; <a href="https://github.com/limaronaldo/claude-toolkit">GitHub</a></p>
+    </footer>
+  </div>
+</body>
+</html>

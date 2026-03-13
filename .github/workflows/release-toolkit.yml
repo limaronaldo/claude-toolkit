@@ -1,0 +1,51 @@
+name: Release — Claude Toolkit
+
+on:
+  push:
+    tags: ['toolkit-v*']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd packages/claude-toolkit/npm && node --test tests/claude_toolkit.test.mjs
+
+  publish-npm:
+    name: Publish to npm
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Check if version already published
+        id: check
+        working-directory: packages/claude-toolkit/npm
+        run: |
+          LOCAL=$(node -e "console.log(require('./package.json').version)")
+          REMOTE=$(npm view claude-toolkit version 2>/dev/null || echo "0.0.0")
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Version $LOCAL already published — skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Publishing $LOCAL (remote: $REMOTE)"
+          fi
+
+      - name: Publish
+        if: steps.check.outputs.skip != 'true'
+        working-directory: packages/claude-toolkit/npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

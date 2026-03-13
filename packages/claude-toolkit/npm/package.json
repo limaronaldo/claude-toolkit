@@ -1,0 +1,43 @@
+{
+  "name": "claude-toolkit",
+  "version": "1.0.0",
+  "description": "Unified CLI for Claude Code — combines Claude Primer + MAO Orchestrator",
+  "type": "module",
+  "bin": {
+    "claude-toolkit": "index.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test tests/claude_toolkit.test.mjs"
+  },
+  "dependencies": {
+    "claude-primer": "^1.8.1",
+    "mao-orchestrator": "^1.1.1"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "ai",
+    "toolkit",
+    "primer",
+    "orchestrator",
+    "mao",
+    "multi-agent"
+  ],
+  "author": "Ronaldo Martins de Lima Filho",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/limaronaldo/claude-toolkit.git"
+  },
+  "homepage": "https://github.com/limaronaldo/claude-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/limaronaldo/claude-toolkit/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
