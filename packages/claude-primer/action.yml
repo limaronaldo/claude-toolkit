@@ -1,0 +1,92 @@
+name: 'Claude Primer'
+description: 'Generate context-aware knowledge architecture for AI coding assistants'
+author: 'Ronaldo Martins de Lima Filho'
+
+branding:
+  icon: 'book-open'
+  color: 'orange'
+
+inputs:
+  target:
+    description: 'Target directory to prime'
+    required: false
+    default: '.'
+  version:
+    description: 'Version of claude-primer to use'
+    required: false
+    default: 'latest'
+  args:
+    description: 'Additional CLI arguments'
+    required: false
+    default: ''
+  check-only:
+    description: 'Only check if docs are up-to-date (exit 1 if stale)'
+    required: false
+    default: 'false'
+  with-readme:
+    description: 'Generate README.md'
+    required: false
+    default: 'false'
+  agent:
+    description: 'Generate agent-specific context (all, cursor, copilot, etc.)'
+    required: false
+    default: ''
+  force:
+    description: 'Overwrite existing files'
+    required: false
+    default: 'false'
+
+outputs:
+  files-changed:
+    description: 'Whether any files were written or would change'
+    value: ${{ steps.run.outputs.files-changed }}
+  plan-json:
+    description: 'Project analysis as JSON'
+    value: ${{ steps.plan.outputs.plan-json }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install claude-primer
+      shell: bash
+      run: pip install claude-primer==${{ inputs.version == 'latest' && '' || inputs.version }}
+
+    - name: Get plan JSON
+      id: plan
+      shell: bash
+      run: |
+        PLAN=$(claude-primer "${{ inputs.target }}" --plan-json --no-git-check 2>/dev/null || echo '{}')
+        echo "plan-json=$PLAN" >> "$GITHUB_OUTPUT"
+
+    - name: Run check mode
+      if: inputs.check-only == 'true'
+      id: check
+      shell: bash
+      run: |
+        claude-primer "${{ inputs.target }}" --check --no-git-check
+        echo "files-changed=false" >> "$GITHUB_OUTPUT"
+
+    - name: Run claude-primer
+      if: inputs.check-only != 'true'
+      id: run
+      shell: bash
+      run: |
+        ARGS="--yes --no-git-check"
+        if [ "${{ inputs.with-readme }}" = "true" ]; then ARGS="$ARGS --with-readme"; fi
+        if [ "${{ inputs.force }}" = "true" ]; then ARGS="$ARGS --force"; fi
+        if [ -n "${{ inputs.agent }}" ]; then ARGS="$ARGS --agent ${{ inputs.agent }}"; fi
+        ARGS="$ARGS ${{ inputs.args }}"
+
+        OUTPUT=$(claude-primer "${{ inputs.target }}" $ARGS 2>&1)
+        echo "$OUTPUT"
+
+        if echo "$OUTPUT" | grep -q "WRITE\|CREATE"; then
+          echo "files-changed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "files-changed=false" >> "$GITHUB_OUTPUT"
+        fi

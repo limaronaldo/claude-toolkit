@@ -1,0 +1,10 @@
+.git
+npm/
+docs/
+build/
+__pycache__
+.pytest_cache
+*.pyc
+*.egg-info
+.claude/
+.env.local

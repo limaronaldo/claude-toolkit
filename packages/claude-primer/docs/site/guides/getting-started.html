@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Getting Started — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>Getting Started</h1>
+
+                    <h2>Installation</h2>
+                    <p>
+                        Choose the method that works best for your environment:
+                    </p>
+
+                    <h3>Zero-install (recommended)</h3>
+                    <pre><code># Python (pipx)
+pipx run claude-primer
+
+# Python (uvx)
+uvx claude-primer
+
+# Node.js
+npx claude-primer</code></pre>
+
+                    <h3>Standalone binary</h3>
+                    <pre><code># Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.sh | bash
+
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.ps1 | iex</code></pre>
+
+                    <h3>Package managers</h3>
+                    <pre><code># macOS
+brew install limaronaldo/tap/claude-primer
+
+# Windows (Scoop)
+scoop bucket add limaronaldo https://github.com/limaronaldo/scoop-bucket
+scoop install claude-primer
+
+# pip (global install)
+pip install claude-primer</code></pre>
+
+                    <h3>Docker</h3>
+                    <pre><code>docker run --rm -v "$(pwd):/project" ghcr.io/limaronaldo/claude-primer</code></pre>
+
+                    <h2>Basic Usage</h2>
+                    <pre><code># Interactive setup in current directory
+claude-primer
+
+# Specific directory, non-interactive
+claude-primer /path/to/project --yes
+
+# Preview without writing
+claude-primer --dry-run
+
+# Overwrite existing files (skip unchanged)
+claude-primer --force --yes
+
+# Output project analysis as JSON
+claude-primer --plan-json
+
+# Structured output (JSON or YAML)
+claude-primer --format json --yes
+claude-primer --format yaml --yes
+
+# Check if docs are up-to-date (great for CI)
+claude-primer --check --no-git-check
+
+# Export all generated files to a single .md file
+claude-primer --export
+
+# Export to a custom filename
+claude-primer --export docs-bundle.md</code></pre>
+
+                    <h2>What Happens</h2>
+                    <ol>
+                        <li>
+                            <strong>Scan</strong> &mdash; Detects languages,
+                            frameworks, deploy targets, and monorepo structure
+                        </li>
+                        <li>
+                            <strong>Git safety</strong> &mdash; Checks for
+                            uncommitted changes (configurable via
+                            <code>--git-mode</code>)
+                        </li>
+                        <li>
+                            <strong>Generate</strong> &mdash; Creates CLAUDE.md,
+                            STANDARDS.md, QUICKSTART.md, ERRORS_AND_LESSONS.md
+                        </li>
+                        <li>
+                            <strong>Verify</strong> &mdash; Confirms all files
+                            were written correctly
+                        </li>
+                    </ol>
+
+                    <h2>Next Steps</h2>
+                    <ul>
+                        <li>
+                            <a href="/claude-primer/guides/templates.html"
+                                >Customize output with templates</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/claude-primer/guides/watch-mode.html"
+                                >Auto-regenerate with watch mode</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/claude-primer/guides/multi-agent.html"
+                                >Generate context for other AI tools</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/claude-primer/guides/plugins.html"
+                                >Extend with custom plugins</a
+                            >
+                        </li>
+                        <li>
+                            <a href="/claude-primer/guides/cli-reference.html"
+                                >Full CLI reference</a
+                            >
+                        </li>
+                    </ul>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

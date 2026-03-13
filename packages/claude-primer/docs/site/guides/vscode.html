@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>VS Code Extension — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>VS Code Extension</h1>
+                    <p>
+                        The Claude Primer VS Code extension brings knowledge
+                        architecture generation directly into your editor.
+                    </p>
+
+                    <h2>Installation</h2>
+                    <pre><code># From VS Code Marketplace (coming soon)
+code --install-extension limaronaldo.claude-primer
+
+# Or from source
+cd vscode/ && vsce package && code --install-extension claude-primer-*.vsix</code></pre>
+                    <p>
+                        Requires the <code>claude-primer</code> CLI to be
+                        installed and available on your PATH (or via npx/pipx).
+                    </p>
+
+                    <h2>Commands</h2>
+                    <p>
+                        All commands are available via the Command Palette
+                        (Cmd+Shift+P / Ctrl+Shift+P):
+                    </p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Claude Primer: Generate</td>
+                                <td>
+                                    Run full generation with
+                                    <code>--yes --git-mode skip</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Claude Primer: Dry Run</td>
+                                <td>
+                                    Preview what would be generated without
+                                    writing files
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Claude Primer: Show Diff</td>
+                                <td>
+                                    Show unified diff of changes, opens as a
+                                    <code>.diff</code> file
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Claude Primer: Init Config</td>
+                                <td>
+                                    Create <code>.claude-primer.toml</code> via
+                                    guided prompts (no terminal needed)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Claude Primer: Plan JSON</td>
+                                <td>
+                                    View project analysis in a webview panel
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Binary Resolution</h2>
+                    <p>
+                        The extension finds <code>claude-primer</code>
+                        automatically:
+                    </p>
+                    <ol>
+                        <li>
+                            Checks PATH for <code>claude-primer</code>
+                        </li>
+                        <li>
+                            Falls back to
+                            <code>npx --yes claude-primer</code>
+                        </li>
+                        <li>
+                            Falls back to
+                            <code>pipx run claude-primer</code>
+                        </li>
+                    </ol>
+
+                    <h2>Output</h2>
+                    <ul>
+                        <li>
+                            Generate and Dry Run stream output to the
+                            "Claude Primer" output channel
+                        </li>
+                        <li>
+                            Show Diff opens a syntax-highlighted
+                            <code>.diff</code> file
+                        </li>
+                        <li>
+                            Plan JSON renders a formatted webview with project
+                            metadata
+                        </li>
+                    </ul>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

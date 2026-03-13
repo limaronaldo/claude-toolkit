@@ -1,0 +1,278 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+            artifact: claude-primer-linux-x86_64
+          - os: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+            artifact: claude-primer-linux-arm64
+          - os: macos-14
+            platform: macos
+            arch: arm64
+            artifact: claude-primer-macos-arm64
+          - os: macos-15-intel
+            platform: macos
+            arch: x86_64
+            artifact: claude-primer-macos-x86_64
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+            artifact: claude-primer-windows-x86_64.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build binary
+        shell: bash
+        run: pyinstaller build/pyinstaller.spec --distpath build/dist --workpath build/work
+
+      - name: Rename artifact
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            mv build/dist/claude-primer.exe build/dist/${{ matrix.artifact }}
+          else
+            mv build/dist/claude-primer build/dist/${{ matrix.artifact }}
+            chmod +x build/dist/${{ matrix.artifact }}
+          fi
+
+      - name: Smoke test
+        shell: bash
+        env:
+          PYTHONUTF8: '1'
+        run: |
+          SMOKE_DIR="${RUNNER_TEMP}/smoke-test"
+          mkdir -p "$SMOKE_DIR"
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            build/dist/${{ matrix.artifact }} --help
+            build/dist/${{ matrix.artifact }} "$SMOKE_DIR" --yes --no-git-check
+          else
+            ./build/dist/${{ matrix.artifact }} --help
+            ./build/dist/${{ matrix.artifact }} "$SMOKE_DIR" --yes --no-git-check
+          fi
+          test -f "$SMOKE_DIR/CLAUDE.md"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: build/dist/${{ matrix.artifact }}
+          retention-days: 1
+
+  publish-github:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release
+          find artifacts -type f -name "claude-primer-*" -exec cp {} release/ \;
+          ls -lh release/
+
+      - name: Generate checksums
+        working-directory: release
+        run: |
+          sha256sum claude-primer-* > checksums-sha256.txt
+          echo "=== Checksums ==="
+          cat checksums-sha256.txt
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+
+  integration-tests:
+    needs: publish-github
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: claude-primer-linux-x86_64
+          - os: macos-14
+            artifact: claude-primer-macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: bin/
+
+      - name: Make binary executable
+        run: chmod +x bin/${{ matrix.artifact }}
+
+      - name: Test basic generation
+        run: |
+          TESTDIR="${RUNNER_TEMP}/e2e-basic"
+          mkdir -p "$TESTDIR"
+          echo '{"name":"test","dependencies":{"express":"^4.0"}}' > "$TESTDIR/package.json"
+          echo 'console.log("hi")' > "$TESTDIR/index.js"
+          ./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check
+          test -f "$TESTDIR/CLAUDE.md"
+          test -f "$TESTDIR/QUICKSTART.md"
+          test -f "$TESTDIR/STANDARDS.md"
+          test -f "$TESTDIR/ERRORS_AND_LESSONS.md"
+          grep -q "node" "$TESTDIR/CLAUDE.md"
+
+      - name: Test --force idempotency
+        run: |
+          TESTDIR="${RUNNER_TEMP}/e2e-force"
+          mkdir -p "$TESTDIR"
+          echo '{"name":"test"}' > "$TESTDIR/package.json"
+          ./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check
+          # Run twice with --force — second run should skip unchanged files
+          OUTPUT=$(./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check --force 2>&1)
+          echo "$OUTPUT" | grep -q "SKIP"
+
+      - name: Test --plan-json output shape
+        run: |
+          TESTDIR="${RUNNER_TEMP}/e2e-plan"
+          mkdir -p "$TESTDIR"
+          echo 'print("hi")' > "$TESTDIR/main.py"
+          echo 'flask' > "$TESTDIR/requirements.txt"
+          OUTPUT=$(./bin/${{ matrix.artifact }} "$TESTDIR" --plan-json --no-git-check)
+          echo "$OUTPUT" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          assert 'stacks' in d
+          assert 'tier' in d
+          assert 'frameworks' in d
+          assert 'write_plan' in d
+          assert 'confidence_scores' in d
+          print('plan-json shape OK')
+          "
+
+      - name: Test --agent codex
+        run: |
+          TESTDIR="${RUNNER_TEMP}/e2e-agent"
+          mkdir -p "$TESTDIR"
+          echo '{"name":"test","dependencies":{"express":"^4.0"}}' > "$TESTDIR/package.json"
+          ./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check --agent codex
+          test -f "$TESTDIR/AGENTS.md"
+
+      - name: Test --dry-run
+        run: |
+          TESTDIR="${RUNNER_TEMP}/e2e-dry"
+          mkdir -p "$TESTDIR"
+          ./bin/${{ matrix.artifact }} "$TESTDIR" --dry-run --yes | grep -qi "dry run"
+          test ! -f "$TESTDIR/CLAUDE.md"
+
+      - name: Test plugin system
+        run: |
+          TESTDIR="${RUNNER_TEMP}/e2e-plugin"
+          mkdir -p "$TESTDIR/.claude-primer/plugins"
+          echo '{"name":"test"}' > "$TESTDIR/package.json"
+          cat > "$TESTDIR/.claude-primer/plugins/hello.py" << 'PLUGIN'
+          def generate(info):
+              return {"filename": "HELLO.md", "content": "# Hello from plugin\n"}
+          PLUGIN
+          ./bin/${{ matrix.artifact }} "$TESTDIR" --yes --no-git-check
+          test -f "$TESTDIR/HELLO.md"
+          grep -q "Hello from plugin" "$TESTDIR/HELLO.md"
+
+  publish-pypi:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and publish
+        working-directory: python
+        run: |
+          pip install build twine
+          LOCAL=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          REMOTE=$(pip index versions claude-primer 2>/dev/null | grep -oP '^\S+ \(\K[^)]+' || echo "0.0.0")
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "Version $LOCAL already published — skipping"
+          else
+            python -m build
+            twine upload dist/*
+          fi
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  publish-npm:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Publish to npm
+        working-directory: npm
+        run: |
+          CURRENT=$(npm view claude-primer version 2>/dev/null || echo "0.0.0")
+          LOCAL=$(node -p "require('./package.json').version")
+          if [ "$CURRENT" = "$LOCAL" ]; then
+            echo "Version $LOCAL already published — skipping"
+          else
+            npm publish
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-docker:
+    needs: publish-github
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/limaronaldo/claude-primer:latest
+            ghcr.io/limaronaldo/claude-primer:${{ github.event.release.tag_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

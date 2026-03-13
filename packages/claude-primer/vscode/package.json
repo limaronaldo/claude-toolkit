@@ -1,0 +1,22 @@
+{
+  "name": "claude-primer",
+  "displayName": "Claude Primer",
+  "description": "Prime your repo for Claude Code — context-aware knowledge architecture generator",
+  "version": "1.8.1",
+  "publisher": "limaronaldo",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "claude-primer.run", "title": "Claude Primer: Generate" },
+      { "command": "claude-primer.dryRun", "title": "Claude Primer: Dry Run" },
+      { "command": "claude-primer.diff", "title": "Claude Primer: Show Diff" },
+      { "command": "claude-primer.init", "title": "Claude Primer: Init Config" },
+      { "command": "claude-primer.planJson", "title": "Claude Primer: Plan JSON" }
+    ]
+  },
+  "repository": { "type": "git", "url": "https://github.com/limaronaldo/claude-primer" },
+  "license": "MIT"
+}

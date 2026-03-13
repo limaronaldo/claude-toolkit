@@ -1,0 +1,26 @@
+<idea-plugin>
+    <id>com.github.limaronaldo.claude-primer</id>
+    <name>Claude Primer</name>
+    <vendor email="" url="https://github.com/limaronaldo/claude-primer">limaronaldo</vendor>
+    <description><![CDATA[
+        Generate context-aware knowledge architecture for AI coding assistants.
+        Runs claude-primer CLI to create CLAUDE.md, STANDARDS.md, QUICKSTART.md,
+        and ERRORS_AND_LESSONS.md files for your project.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <actions>
+        <group id="ClaudePrimer.Menu" text="Claude Primer" description="Claude Primer actions" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="ClaudePrimer.Generate" class="com.github.limaronaldo.claudeprimer.GenerateAction"
+                    text="Generate" description="Run claude-primer generation"/>
+            <action id="ClaudePrimer.DryRun" class="com.github.limaronaldo.claudeprimer.DryRunAction"
+                    text="Dry Run" description="Preview what would be generated"/>
+            <action id="ClaudePrimer.Diff" class="com.github.limaronaldo.claudeprimer.DiffAction"
+                    text="Show Diff" description="Show what would change"/>
+            <action id="ClaudePrimer.Check" class="com.github.limaronaldo.claudeprimer.CheckAction"
+                    text="Check" description="Check if docs are up-to-date"/>
+        </group>
+    </actions>
+</idea-plugin>

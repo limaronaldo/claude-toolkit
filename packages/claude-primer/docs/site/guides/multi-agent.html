@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Multi-Agent Output — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>Multi-Agent Context Output</h1>
+                    <p>
+                        Generate context files for AI coding tools beyond Claude
+                        Code.
+                    </p>
+
+                    <h2>Supported Agents</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Output File</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>claude</code></td>
+                                <td><code>CLAUDE.md</code> (default)</td>
+                            </tr>
+                            <tr>
+                                <td><code>cursor</code></td>
+                                <td><code>.cursor/rules/project.mdc</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>copilot</code></td>
+                                <td>
+                                    <code>.github/copilot-instructions.md</code>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>windsurf</code></td>
+                                <td><code>.windsurfrules</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>aider</code></td>
+                                <td><code>.aider/conventions.md</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>codex</code></td>
+                                <td><code>AGENTS.md</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Usage</h2>
+                    <pre><code># Generate for a single agent
+claude-primer --agent cursor --yes
+
+# Generate for multiple agents
+claude-primer --agent cursor,copilot,codex --yes
+
+# Generate for all supported agents
+claude-primer --agent all --yes</code></pre>
+
+                    <h2>Output Formats</h2>
+                    <p>
+                        Agent files default to markdown. You can also output
+                        structured data:
+                    </p>
+                    <pre><code># JSON format
+claude-primer --agent copilot --format json --yes
+
+# YAML format
+claude-primer --agent copilot --format yaml --yes</code></pre>
+                    <p>
+                        Structured formats create a
+                        <code>.claude-primer-context.{json,yaml}</code> file
+                        with the full project analysis.
+                    </p>
+
+                    <h2>Agent File Content</h2>
+                    <p>
+                        Each agent file contains the same core project context
+                        adapted to the tool's conventions:
+                    </p>
+                    <ul>
+                        <li>Project overview and tech stack</li>
+                        <li>Directory structure</li>
+                        <li>Common commands</li>
+                        <li>Coding standards and conventions</li>
+                        <li>Framework-specific patterns</li>
+                    </ul>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Commands — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>Commands</h1>
+
+                    <h2>--migrate</h2>
+                    <p>
+                        Convert <code>.claude-setup.rc</code> (INI format) to
+                        <code>.claude-primer.toml</code> (TOML format).
+                    </p>
+                    <pre><code>claude-primer --migrate
+claude-primer /path/to/project --migrate</code></pre>
+                    <p>
+                        Reads the existing <code>.claude-setup.rc</code>,
+                        extracts project metadata (description, stacks,
+                        frameworks, deploy targets, monorepo settings), and
+                        writes a <code>.claude-primer.toml</code> with a
+                        <code>[project]</code> section and a
+                        <code>[flags]</code> section with commented-out
+                        defaults.
+                    </p>
+                    <p>
+                        The original <code>.claude-setup.rc</code> is NOT
+                        deleted — both files can coexist.
+                    </p>
+
+                    <h2>--init</h2>
+                    <p>
+                        Interactively create a
+                        <code>.claude-primer.toml</code> config file.
+                    </p>
+                    <pre><code>claude-primer --init
+claude-primer --init --yes  # non-interactive with defaults</code></pre>
+                    <p>
+                        In interactive mode, asks 5 questions: force mode,
+                        include README, clean root, git mode, target agents.
+                        In <code>--yes</code> mode, writes sensible defaults
+                        (all false, git_mode="ask").
+                    </p>
+
+                    <h2>--update</h2>
+                    <p>
+                        Self-update the compiled binary from GitHub releases.
+                    </p>
+                    <pre><code>claude-primer --update</code></pre>
+                    <p>
+                        Only works for compiled binaries (PyInstaller builds).
+                        When running from source, suggests
+                        <code>pip install --upgrade claude-primer</code> or
+                        <code>npm install -g claude-primer@latest</code>
+                        instead.
+                    </p>
+                    <p>
+                        Downloads the platform-appropriate binary, verifies
+                        SHA256 checksum, backs up the current binary, and
+                        replaces it. Restores from backup on failure.
+                    </p>
+
+                    <h2>--check</h2>
+                    <p>
+                        Validate whether generated docs are up-to-date.
+                        Returns exit code 0 if all files match, exit code 1 if
+                        any are stale or missing. Ideal for CI pipelines.
+                    </p>
+                    <pre><code># Check if docs are current
+claude-primer --check
+
+# Use in CI (fails the build if docs are stale)
+claude-primer --check --no-git-check</code></pre>
+                    <p>Output shows status per file:</p>
+                    <pre><code>  OK      CLAUDE.md
+  OK      STANDARDS.md
+  STALE   QUICKSTART.md
+  MISSING ERRORS_AND_LESSONS.md
+  2 file(s) stale or missing.</code></pre>
+                    <p>
+                        <strong>v1.8.1 improvement:</strong> The comparison
+                        now normalizes volatile fields (dates, directory
+                        structure, provenance sections) and clears
+                        existing content before diffing, preventing
+                        self-referential migration artifacts. This means
+                        <code>--check</code> reliably reports "up-to-date"
+                        for freshly generated files.
+                    </p>
+
+                    <h2>--export</h2>
+                    <p>
+                        Bundle all generated docs into a single file. The
+                        default output is a combined markdown file
+                        (<code>claude-primer-export.md</code>). Both Python
+                        and npm implementations use <code>.md</code> as the
+                        default format as of v1.8.1. Specify a
+                        <code>.tar.gz</code> or <code>.zip</code> filename to
+                        produce an archive instead (Python only when passing an
+                        explicit filename).
+                    </p>
+                    <pre><code># Default: combined markdown file (claude-primer-export.md)
+claude-primer --export
+
+# Explicit archive formats (Python)
+claude-primer --export docs-bundle.tar.gz
+claude-primer --export docs-bundle.zip
+
+# Combined markdown with custom name
+claude-primer --export knowledge.md
+
+# Include agent files if they exist
+claude-primer --export --agent all</code></pre>
+                    <p>
+                        The output includes CLAUDE.md, STANDARDS.md,
+                        QUICKSTART.md, ERRORS_AND_LESSONS.md, and any
+                        agent-specific context files.
+                    </p>
+
+                    <h2>--diff</h2>
+                    <p>
+                        Show what would change without writing files (unified
+                        diff). As of v1.8.1, a bug that caused an infinite loop
+                        when comparing an empty file to new content has been
+                        fixed in the npm implementation.
+                    </p>
+                    <pre><code>claude-primer --diff</code></pre>
+
+                    <h2>Telemetry</h2>
+                    <p>
+                        When telemetry is opted in via
+                        <code>CLAUDE_PRIMER_TELEMETRY=1</code>, all standalone
+                        commands emit telemetry events: <code>--check</code>,
+                        <code>--export</code>, <code>--migrate</code>,
+                        <code>--init</code>, <code>--update</code>, and
+                        <code>--diff</code>. Use <code>--telemetry-off</code>
+                        to suppress even when the environment variable is set.
+                    </p>
+
+                    <h2>--from-doc (URL Support)</h2>
+                    <p>
+                        Bootstrap from a remote document. Accepts both local
+                        file paths and HTTP/HTTPS URLs.
+                    </p>
+                    <pre><code># From a local file
+claude-primer --from-doc ./architecture.md
+
+# From a URL
+claude-primer --from-doc https://example.com/spec.md
+
+# From a GitHub raw URL
+claude-primer --from-doc https://raw.githubusercontent.com/org/repo/main/ARCHITECTURE.md</code></pre>
+                    <p>
+                        URLs are fetched with a 15-second timeout. The content
+                        is parsed and used to seed the generated documentation.
+                    </p>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

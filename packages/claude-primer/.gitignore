@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+*.egg-info/
+*.egg
+dist/
+build/
+!build/pyinstaller.spec
+!build/winget/
+.pytest_cache/
+.claude/
+
+# Generated output (tool creates these in target dirs, not source)
+CLAUDE.md
+STANDARDS.md
+QUICKSTART.md
+ERRORS_AND_LESSONS.md
+.claude-setup.rc
+.ralph/
+.ralphrc
+.env.local

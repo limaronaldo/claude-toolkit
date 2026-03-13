@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Plugin System — Claude Primer</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <div class="site-wrapper">
+            <nav class="navbar">
+                <div class="nav-left">
+                    <a href="/claude-primer/" class="brand-logo">
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                        >
+                            <path
+                                d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                fill="#D29A71"
+                            />
+                        </svg>
+                        <span class="logo-text">Claude Primer</span>
+                    </a>
+                </div>
+                <div class="nav-links">
+                    <a href="/claude-primer/guides/getting-started.html"
+                        >Getting Started</a
+                    >
+                    <a href="/claude-primer/guides/templates.html">Templates</a>
+                    <a href="/claude-primer/guides/watch-mode.html"
+                        >Watch Mode</a
+                    >
+                    <a href="/claude-primer/guides/plugins.html">Plugins</a>
+                    <a href="/claude-primer/guides/multi-agent.html"
+                        >Multi-Agent</a
+                    >
+                    <a href="/claude-primer/guides/config.html">Config</a>
+                    <a href="/claude-primer/guides/commands.html">Commands</a>
+                    <a href="/claude-primer/guides/vscode.html">VS Code</a>
+                    <a href="/claude-primer/guides/cli-reference.html"
+                        >CLI Reference</a
+                    >
+                </div>
+                <div class="nav-right">
+                    <a
+                        href="https://github.com/limaronaldo/claude-primer"
+                        class="btn btn-nav"
+                        >View GitHub</a
+                    >
+                </div>
+            </nav>
+            <main class="main-content">
+                <section class="features-section" style="margin-top: 2rem">
+                    <h1>Plugin System</h1>
+                    <p>
+                        Register custom generators to produce additional files
+                        alongside built-in output.
+                    </p>
+
+                    <h2>Setup</h2>
+                    <pre><code>mkdir -p .claude-primer/plugins</code></pre>
+
+                    <h2>Writing a Plugin (Python)</h2>
+                    <p>
+                        Create a <code>.py</code> file with a
+                        <code>generate(info)</code> function:
+                    </p>
+                    <pre><code># .claude-primer/plugins/api-docs.py
+
+def generate(info):
+    """Generate API documentation scaffold."""
+    stacks = ", ".join(info.get("stacks", []))
+    frameworks = ", ".join(info.get("frameworks", []))
+
+    return {
+        "filename": "API_DOCS.md",
+        "content": f"""# API Documentation
+
+## Tech Stack
+{stacks}
+
+## Frameworks
+{frameworks}
+
+## Endpoints
+
+<!-- Add your API endpoints here -->
+"""
+    }</code></pre>
+
+                    <h2>Writing a Plugin (Node.js)</h2>
+                    <p>
+                        Create a <code>.mjs</code> file with a default export
+                        function:
+                    </p>
+                    <pre><code>// .claude-primer/plugins/api-docs.mjs
+
+export default function generate(info) {
+  return {
+    filename: "API_DOCS.md",
+    content: `# API Documentation\n\nStack: ${(info.stacks || []).join(", ")}\n`
+  };
+}</code></pre>
+
+                    <h2>Multi-File Plugins</h2>
+                    <p>Return an array to generate multiple files:</p>
+                    <pre><code>def generate(info):
+    return [
+        {"filename": "docs/API.md", "content": "# API\n"},
+        {"filename": "docs/ARCHITECTURE.md", "content": "# Architecture\n"},
+    ]</code></pre>
+
+                    <h2>Plugin Contract</h2>
+                    <p>
+                        The <code>info</code> dict contains the full project
+                        scan result:
+                    </p>
+                    <ul>
+                        <li>
+                            <code>info["name"]</code> &mdash; project directory
+                            name
+                        </li>
+                        <li>
+                            <code>info["stacks"]</code> &mdash; detected
+                            language stacks (list)
+                        </li>
+                        <li>
+                            <code>info["frameworks"]</code> &mdash; detected
+                            frameworks (list)
+                        </li>
+                        <li>
+                            <code>info["tier"]</code> &mdash; tier
+                            classification dict
+                        </li>
+                        <li>
+                            <code>info["deploy"]</code> &mdash; deploy targets
+                            (list)
+                        </li>
+                        <li>
+                            <code>info["is_monorepo"]</code> &mdash; boolean
+                        </li>
+                        <li>
+                            <code>info["existing_content"]</code> &mdash;
+                            extracted docs content
+                        </li>
+                    </ul>
+
+                    <h2>Error Handling</h2>
+                    <p>
+                        If a plugin throws an exception, claude-primer prints a
+                        warning and continues with the remaining plugins and
+                        built-in generation. Your plugin will not crash the CLI.
+                    </p>
+
+                    <h2>Custom Plugin Directory</h2>
+                    <pre><code>claude-primer --plugin-dir path/to/my-plugins</code></pre>
+                </section>
+            </main>
+            <footer class="site-footer">
+                <div class="footer-content">
+                    <div class="footer-left">
+                        <a href="#" class="footer-logo">
+                            <svg
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <path
+                                    d="M12 2L14.3 9.7L22 12L14.3 14.3L12 22L9.7 14.3L2 12L9.7 9.7L12 2Z"
+                                    fill="#A8A49C"
+                                />
+                            </svg>
+                            Claude Primer
+                        </a>
+                    </div>
+                    <div class="footer-links">
+                        <span>&copy; 2026 Claude Primer Contributors</span>
+                        <a href="https://github.com/limaronaldo/claude-primer"
+                            >GitHub</a
+                        >
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </body>
+</html>

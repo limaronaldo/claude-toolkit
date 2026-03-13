@@ -1,0 +1,15 @@
+{
+  "name": "claude-primer",
+  "version": "1.8.1",
+  "description": "Prime your repo for Claude Code with context-aware knowledge architecture",
+  "type": "module",
+  "bin": { "claude-primer": "index.mjs" },
+  "files": ["index.mjs", "README.md", "LICENSE"],
+  "scripts": { "test": "node --test tests/claude_primer.test.mjs tests/properties.test.mjs" },
+  "keywords": ["claude", "claude-code", "documentation", "bootstrap", "ai"],
+  "license": "MIT",
+  "engines": { "node": ">=18.0.0" },
+  "repository": { "type": "git", "url": "git+https://github.com/limaronaldo/claude-primer.git" },
+  "homepage": "https://github.com/limaronaldo/claude-primer#readme",
+  "bugs": { "url": "https://github.com/limaronaldo/claude-primer/issues" }
+}
