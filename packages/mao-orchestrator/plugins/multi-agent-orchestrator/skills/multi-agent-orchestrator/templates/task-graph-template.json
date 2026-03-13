@@ -1,0 +1,45 @@
+{
+  "intent": "",
+  "created_at": "",
+  "config": {
+    "max_parallel_agents": 4,
+    "max_opus_concurrent": 1,
+    "max_retries_per_task": 2,
+    "escalation_budget": 3,
+    "max_opus_invocations": 5
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "name": "",
+      "description": "",
+      "complexity_score": 0,
+      "complexity_factors": {
+        "files_touched": 0,
+        "new_logic": 0,
+        "security_risk": 0,
+        "concurrency": 0
+      },
+      "model": "haiku",
+      "deps": [],
+      "tools": ["Read", "Write", "Bash"],
+      "verify": "",
+      "worktree": "wt-task-name",
+      "estimated_files": [],
+      "status": "pending",
+      "agent": null,
+      "attempts": 0,
+      "error": null
+    }
+  ],
+  "dag_waves": [
+    {
+      "wave": 1,
+      "tasks": [],
+      "parallel": true
+    }
+  ],
+  "worktrees": {},
+  "escalation_log": [],
+  "exploration_log": []
+}

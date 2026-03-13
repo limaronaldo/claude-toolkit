@@ -1,0 +1,94 @@
+name: 'MAO Orchestrator'
+description: 'Validate MAO task graphs and orchestrator artifacts'
+author: 'aiconnai'
+
+branding:
+  icon: 'git-branch'
+  color: 'blue'
+
+inputs:
+  task-graph:
+    description: 'Path to task-graph.json'
+    required: false
+    default: '.orchestrator/state/task-graph.json'
+  fail-on-error:
+    description: 'Fail the workflow if validation errors are found'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate task graph
+      shell: bash
+      run: |
+        GRAPH="${{ inputs.task-graph }}"
+
+        if [ ! -f "$GRAPH" ]; then
+          echo "No task graph found at $GRAPH — skipping validation."
+          exit 0
+        fi
+
+        echo "Validating $GRAPH..."
+
+        python3 -c "
+        import json, sys
+
+        with open('$GRAPH') as f:
+            data = json.load(f)
+
+        errors = []
+
+        # Required keys
+        for key in ['tasks', 'dag_waves', 'config']:
+            if key not in data:
+                errors.append(f'Missing required key: {key}')
+
+        # Task schema
+        tasks = data.get('tasks', [])
+        ids = set()
+        for t in tasks:
+            tid = t.get('id', '?')
+            ids.add(tid)
+            if 'id' not in t: errors.append('Task missing id')
+            if 'model' not in t: errors.append(f'Task {tid} missing model')
+            if 'deps' not in t: errors.append(f'Task {tid} missing deps')
+
+        # Dependency validity
+        for t in tasks:
+            for dep in t.get('deps', []):
+                if dep not in ids:
+                    errors.append(f'Task {t[\"id\"]} depends on unknown task {dep}')
+
+        # Cycle detection (Kahn)
+        in_deg = {t['id']: 0 for t in tasks}
+        adj = {t['id']: [] for t in tasks}
+        for t in tasks:
+            for d in t.get('deps', []):
+                if d in adj:
+                    adj[d].append(t['id'])
+                    in_deg[t['id']] += 1
+        queue = [k for k, v in in_deg.items() if v == 0]
+        visited = 0
+        while queue:
+            node = queue.pop(0)
+            visited += 1
+            for nxt in adj.get(node, []):
+                in_deg[nxt] -= 1
+                if in_deg[nxt] == 0:
+                    queue.append(nxt)
+        if visited != len(tasks):
+            errors.append('DAG contains a cycle')
+
+        if errors:
+            print(f'::error::Validation failed with {len(errors)} error(s)')
+            for e in errors:
+                print(f'::error::{e}')
+            sys.exit(1)
+        else:
+            print(f'Valid task graph: {len(tasks)} tasks, {len(data.get(\"dag_waves\", []))} waves')
+        "
+
+        if [ $? -ne 0 ] && [ "${{ inputs.fail-on-error }}" = "true" ]; then
+          exit 1
+        fi

@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  validate:
+    name: Validate
+    uses: ./.github/workflows/ci.yml
+
+  publish-npm:
+    name: Publish to npm
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Sync plugin files
+        run: |
+          rm -rf npm/plugin
+          mkdir -p npm/plugin
+          cp -r plugins/multi-agent-orchestrator/agents npm/plugin/agents
+          cp -r plugins/multi-agent-orchestrator/commands npm/plugin/commands
+          cp -r plugins/multi-agent-orchestrator/skills npm/plugin/skills
+          cp -r plugins/multi-agent-orchestrator/.claude-plugin npm/plugin/.claude-plugin
+          cp plugins/multi-agent-orchestrator/README.md npm/plugin/README.md
+
+      - name: Check if version already published
+        id: check
+        working-directory: npm
+        run: |
+          LOCAL=$(node -e "console.log(require('./package.json').version)")
+          REMOTE=$(npm view mao-orchestrator version 2>/dev/null || echo "0.0.0")
+          if [ "$LOCAL" = "$REMOTE" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Version $LOCAL already published — skipping."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Publishing $LOCAL (remote: $REMOTE)"
+          fi
+
+      - name: Publish
+        if: steps.check.outputs.skip != 'true'
+        working-directory: npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  attach-assets:
+    name: Attach Release Assets
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create tar.gz
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          tar -czf "mao-orchestrator-v${VERSION}.tar.gz" \
+            -C plugins multi-agent-orchestrator
+          sha256sum "mao-orchestrator-v${VERSION}.tar.gz" > checksums-sha256.txt
+
+      - name: Upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            mao-orchestrator-*.tar.gz
+            checksums-sha256.txt
