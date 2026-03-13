@@ -30,5 +30,8 @@ ERRORS_AND_LESSONS.md
 # Orchestrator state
 .orchestrator/
 
+# Generated exports
+claude-primer-export.md
+
 # OS
 .DS_Store

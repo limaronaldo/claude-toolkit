@@ -1,8 +1,8 @@
 - id: claude-primer-check
   name: claude-primer check
   description: Check if claude-primer generated docs are up-to-date
-  entry: claude-primer --check --no-git-check
-  language: python
+  entry: claude-primer --check --no-git-check --yes
+  language: node
   additional_dependencies: ['claude-primer']
   pass_filenames: false
   always_run: true
