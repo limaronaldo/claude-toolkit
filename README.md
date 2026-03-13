@@ -1,5 +1,12 @@
 # Claude Toolkit
 
+[![CI — Primer](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci-primer.yml/badge.svg)](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci-primer.yml)
+[![CI — MAO](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci-mao.yml/badge.svg)](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci-mao.yml)
+[![CI — Toolkit](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci-toolkit.yml/badge.svg)](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci-toolkit.yml)
+[![npm: claude-primer](https://img.shields.io/npm/v/claude-primer?label=claude-primer)](https://www.npmjs.com/package/claude-primer)
+[![npm: mao-orchestrator](https://img.shields.io/npm/v/mao-orchestrator?label=mao-orchestrator)](https://www.npmjs.com/package/mao-orchestrator)
+[![npm: claude-supertools](https://img.shields.io/npm/v/claude-supertools?label=claude-supertools)](https://www.npmjs.com/package/claude-supertools)
+
 A monorepo containing tools for AI-assisted development with Claude Code.
 
 ## Packages

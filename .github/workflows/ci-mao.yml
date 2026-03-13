@@ -47,6 +47,12 @@ jobs:
             "$BASE/commands/mao-plan.md"
             "$BASE/commands/mao-status.md"
             "$BASE/skills/multi-agent-orchestrator/SKILL.md"
+            "$BASE/hooks/pre-commit-tdd.sh"
+            "$BASE/hooks/post-task-review.sh"
+            "$BASE/hooks/pre-merge-verify.sh"
+            "$BASE/rules/cost-discipline.md"
+            "$BASE/rules/worktree-hygiene.md"
+            "$BASE/rules/commit-format.md"
           )
           missing=0
           for f in "${required[@]}"; do

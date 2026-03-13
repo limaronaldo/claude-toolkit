@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Toolkit — Unified CLI for Primer + MAO</title>
+  <meta name="description" content="Claude Toolkit is the unified CLI that combines Claude Primer and MAO Orchestrator into a single command. Prime your codebase and install multi-agent workflows in one step." />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f97316;
+      --accent2: #3b82f6;
+      --accent3: #10b981;
+      --card-bg: #161b22;
+      --border: #30363d;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--fg); line-height: 1.6; }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Nav */
+    nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border); }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+    nav a:hover { color: var(--fg); }
+    nav .brand { color: var(--accent3); font-weight: 600; font-size: 1rem; }
+    nav .nav-links { display: flex; gap: 1.5rem; }
+
+    /* Hero */
+    .hero { text-align: center; padding: 4rem 0 3rem; }
+    .hero h1 { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .hero h1 .highlight { color: var(--accent3); }
+    .hero p { color: var(--muted); font-size: 1.15rem; max-width: 640px; margin: 0 auto 1.5rem; }
+    .hero .badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .badge { display: inline-block; font-size: 0.8rem; padding: 4px 12px; border-radius: 14px; font-weight: 500; }
+    .badge-primer { background: rgba(249, 115, 22, 0.15); color: var(--accent); }
+    .badge-mao { background: rgba(59, 130, 246, 0.15); color: var(--accent2); }
+    .badge-toolkit { background: rgba(16, 185, 129, 0.15); color: var(--accent3); }
+
+    /* Sections */
+    section { margin: 2.5rem 0; }
+    .section-title { font-size: 1.4rem; margin-bottom: 1rem; }
+
+    /* Code blocks */
+    code { background: #1c2128; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #1c2128; padding: 1rem 1.25rem; border-radius: 6px; overflow-x: auto; margin: 0.75rem 0; }
+    pre code { background: none; padding: 0; }
+    .code-block { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .code-header { padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--bg); }
+    .code-block pre { margin: 0; border-radius: 0; }
+    .comment { color: var(--muted); }
+    .keyword { color: var(--accent3); }
+    .flag { color: var(--accent2); }
+
+    /* Commands table */
+    .commands { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+    .cmd-row { display: flex; gap: 1.5rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); align-items: baseline; }
+    .cmd-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .cmd-row:first-child { padding-top: 0; }
+    .cmd-name { flex-shrink: 0; width: 280px; }
+    .cmd-name code { color: var(--accent3); background: rgba(16, 185, 129, 0.1); }
+    .cmd-desc { color: var(--muted); font-size: 0.9rem; }
+
+    /* How it works */
+    .phases { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .phase { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+    .phase-num { display: inline-block; font-size: 0.75rem; font-weight: 600; color: var(--bg); background: var(--accent3); border-radius: 50%; width: 24px; height: 24px; text-align: center; line-height: 24px; margin-bottom: 0.75rem; }
+    .phase h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .phase p { color: var(--muted); font-size: 0.9rem; }
+    .phase .phase-tool { display: inline-block; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; margin-top: 0.75rem; }
+    .tool-primer { background: rgba(249, 115, 22, 0.15); color: var(--accent); }
+    .tool-mao { background: rgba(59, 130, 246, 0.15); color: var(--accent2); }
+
+    /* Install */
+    .install-section { margin: 3rem 0; }
+
+    /* Footer */
+    footer { text-align: center; padding: 3rem 0; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); margin-top: 2rem; }
+    footer a { color: var(--accent3); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 1.8rem; }
+      .phases { grid-template-columns: 1fr; }
+      .cmd-row { flex-direction: column; gap: 0.25rem; }
+      .cmd-name { width: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="../" class="brand">Claude Toolkit</a>
+      <div class="nav-links">
+        <a href="#commands">Commands</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/limaronaldo/claude-toolkit">GitHub</a>
+      </div>
+    </nav>
+
+    <div class="hero">
+      <h1>One CLI. <span class="highlight">Full setup.</span></h1>
+      <p>Claude Toolkit is the unified meta-package that combines Claude Primer and MAO Orchestrator. Prime your codebase and install multi-agent workflows with a single command.</p>
+      <div class="badges">
+        <span class="badge badge-primer">Primer &mdash; Knowledge</span>
+        <span class="badge badge-mao">MAO &mdash; Orchestration</span>
+        <span class="badge badge-toolkit">Toolkit &mdash; Unified</span>
+      </div>
+    </div>
+
+    <section id="commands">
+      <h2 class="section-title">Commands</h2>
+      <div class="commands">
+        <div class="cmd-row">
+          <div class="cmd-name"><code>claude-toolkit init</code></div>
+          <div class="cmd-desc">Prime project + install MAO agents in one step</div>
+        </div>
+        <div class="cmd-row">
+          <div class="cmd-name"><code>claude-toolkit doctor</code></div>
+          <div class="cmd-desc">Health check for all components (Primer docs, MAO agents, config)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="cmd-name"><code>claude-toolkit update</code></div>
+          <div class="cmd-desc">Update all tools to latest version</div>
+        </div>
+        <div class="cmd-row">
+          <div class="cmd-name"><code>claude-toolkit primer [args]</code></div>
+          <div class="cmd-desc">Passthrough to claude-primer</div>
+        </div>
+        <div class="cmd-row">
+          <div class="cmd-name"><code>claude-toolkit mao [args]</code></div>
+          <div class="cmd-desc">Passthrough to mao-orchestrator</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works">
+      <h2 class="section-title">How It Works</h2>
+      <p style="color: var(--muted); margin-bottom: 1.25rem;">Running <code>claude-toolkit init</code> triggers a two-phase setup that fully prepares your project for AI-assisted development.</p>
+      <div class="phases">
+        <div class="phase">
+          <div class="phase-num">1</div>
+          <h3>Primer Phase</h3>
+          <p>Scans your codebase and generates context-aware documentation &mdash; CLAUDE.md, STANDARDS.md, QUICKSTART.md, and ERRORS_AND_LESSONS.md. These files give Claude deep understanding of your project.</p>
+          <span class="phase-tool tool-primer">claude-primer</span>
+        </div>
+        <div class="phase">
+          <div class="phase-num">2</div>
+          <h3>MAO Phase</h3>
+          <p>Installs the multi-agent orchestrator: slash commands (<code>/mao</code>, <code>/mao-plan</code>, <code>/mao-status</code>) and agent definitions (Architect, Orchestrator, Implementer, Worker, Verifier, Reviewer, Reflector, Explorer).</p>
+          <span class="phase-tool tool-mao">mao-orchestrator</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="install-section" id="install">
+      <h2 class="section-title">Install</h2>
+      <div class="code-block">
+        <div class="code-header">Terminal</div>
+        <pre><code><span class="comment"># Quick start (no install needed)</span>
+<span class="keyword">npx</span> claude-toolkit init
+
+<span class="comment"># Or install globally</span>
+<span class="keyword">npm</span> install <span class="flag">-g</span> claude-supertools
+
+<span class="comment"># Then run from any project</span>
+<span class="keyword">claude-toolkit</span> init</code></pre>
+      </div>
+    </section>
+
+    <footer>
+      <p>MIT License &mdash; <a href="https://github.com/limaronaldo/claude-toolkit">limaronaldo/claude-toolkit</a></p>
+    </footer>
+  </div>
+</body>
+</html>

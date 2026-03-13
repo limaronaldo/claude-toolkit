@@ -131,20 +131,41 @@ function cmdDoctor() {
   }
 }
 
+function getInstalledVersion(pkg) {
+  try {
+    return execSync(`npm ls -g ${pkg} --depth=0 --json 2>/dev/null`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
+  } catch { return null; }
+}
+
+function getLatestVersion(pkg) {
+  try {
+    return execSync(`npm view ${pkg} version 2>/dev/null`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }).trim();
+  } catch { return null; }
+}
+
 function cmdUpdate() {
   console.log(`\n  Claude Toolkit v${VERSION} — Updating...\n`);
 
-  console.log("  Updating claude-primer...");
-  run("npm", ["install", "-g", "claude-primer@latest"]);
+  const packages = ["claude-primer", "mao-orchestrator", "claude-supertools"];
 
-  console.log("  Updating mao-orchestrator...");
-  run("npm", ["install", "-g", "mao-orchestrator@latest"]);
+  for (const pkg of packages) {
+    const latest = getLatestVersion(pkg);
+    if (!latest) {
+      warn(`${pkg}: not found on npm`);
+      continue;
+    }
+    console.log(`  Updating ${pkg} to ${latest}...`);
+    run("npm", ["install", "-g", `${pkg}@latest`]);
+    info(`${pkg}@${latest}`);
+  }
 
-  console.log("  Updating claude-toolkit...");
-  run("npm", ["install", "-g", "claude-toolkit@latest"]);
+  // Re-sync MAO assets after update
+  console.log("\n  Re-syncing MAO assets...\n");
+  const mao = resolveMao();
+  run(mao.cmd, [...mao.args, "init", "--global"]);
 
   console.log();
-  info("All packages updated.\n");
+  info("All packages updated and synced.\n");
 }
 
 function showHelp() {

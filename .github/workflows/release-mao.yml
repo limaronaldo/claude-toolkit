@@ -33,6 +33,8 @@ jobs:
           cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/commands packages/mao-orchestrator/npm/plugin/commands
           cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/skills packages/mao-orchestrator/npm/plugin/skills
           cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/.claude-plugin packages/mao-orchestrator/npm/plugin/.claude-plugin
+          cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/hooks packages/mao-orchestrator/npm/plugin/hooks
+          cp -r packages/mao-orchestrator/plugins/multi-agent-orchestrator/rules packages/mao-orchestrator/npm/plugin/rules
           cp packages/mao-orchestrator/plugins/multi-agent-orchestrator/README.md packages/mao-orchestrator/npm/plugin/README.md
 
       - name: Check if version already published

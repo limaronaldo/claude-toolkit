@@ -346,6 +346,109 @@ function cmdValidate(graphPath) {
   }
 }
 
+export function cmdDoctor() {
+  console.log(`\n  MAO — Doctor v${VERSION}\n`);
+
+  let passed = 0;
+  let warnings = 0;
+  let failures = 0;
+  const total = () => passed + warnings + failures;
+
+  function check(ok, passMsg, failMsg, critical = true) {
+    if (ok) {
+      info(passMsg);
+      passed++;
+    } else if (critical) {
+      error(failMsg);
+      failures++;
+    } else {
+      warn(failMsg);
+      warnings++;
+    }
+  }
+
+  // 1. Plugin directory and expected subdirectories
+  const pluginExists = fs.existsSync(PLUGIN_DIR);
+  check(pluginExists, `Plugin directory exists: ${PLUGIN_DIR}`, `Plugin directory missing: ${PLUGIN_DIR}`);
+
+  const expectedSubdirs = ["agents", "commands", "skills", "hooks", "rules"];
+  for (const sub of expectedSubdirs) {
+    const subPath = path.join(PLUGIN_DIR, sub);
+    check(fs.existsSync(subPath), `Plugin subdirectory exists: ${sub}/`, `Plugin subdirectory missing: ${sub}/`);
+  }
+
+  // 2. All AGENTS files exist in plugin directory
+  for (const agent of AGENTS) {
+    const p = path.join(PLUGIN_DIR, "agents", agent);
+    check(fs.existsSync(p), `Agent file exists: ${agent}`, `Agent file missing: ${agent}`);
+  }
+
+  // 3. All COMMANDS files exist in plugin directory
+  for (const cmd of COMMANDS) {
+    const p = path.join(PLUGIN_DIR, "commands", cmd);
+    check(fs.existsSync(p), `Command file exists: ${cmd}`, `Command file missing: ${cmd}`);
+  }
+
+  // 4. All SKILLS directories exist with SKILL.md files
+  for (const skill of SKILLS) {
+    const skillDir = path.join(PLUGIN_DIR, "skills", skill);
+    const skillMd = path.join(skillDir, "SKILL.md");
+    const dirExists = fs.existsSync(skillDir);
+    const mdExists = fs.existsSync(skillMd);
+    check(dirExists && mdExists, `Skill exists with SKILL.md: ${skill}`, `Skill missing or lacks SKILL.md: ${skill}`);
+  }
+
+  // 5. All HOOKS files exist in plugin directory
+  for (const hook of HOOKS) {
+    const p = path.join(PLUGIN_DIR, "hooks", hook);
+    check(fs.existsSync(p), `Hook file exists: ${hook}`, `Hook file missing: ${hook}`);
+  }
+
+  // 6. All RULES files exist in plugin directory
+  for (const rule of RULES) {
+    const p = path.join(PLUGIN_DIR, "rules", rule);
+    check(fs.existsSync(p), `Rule file exists: ${rule}`, `Rule file missing: ${rule}`);
+  }
+
+  // 7. Check MAO installation (local vs global)
+  const home = process.env.HOME || process.env.USERPROFILE;
+  const localClaudeDir = path.join(process.cwd(), ".claude");
+  const globalClaudeDir = path.join(home, ".claude");
+
+  const localInstalled = COMMANDS.some(c => fs.existsSync(path.join(localClaudeDir, "commands", c)));
+  const globalInstalled = COMMANDS.some(c => fs.existsSync(path.join(globalClaudeDir, "commands", c)));
+
+  if (localInstalled && globalInstalled) {
+    info("MAO installed locally (.claude/ in cwd) and globally (~/.claude/)");
+    passed++;
+  } else if (localInstalled) {
+    info("MAO installed locally (.claude/ in cwd)");
+    passed++;
+  } else if (globalInstalled) {
+    info("MAO installed globally (~/.claude/)");
+    passed++;
+  } else {
+    warn("MAO not installed locally or globally");
+    warnings++;
+  }
+
+  // 8. Check Node.js version >= 18
+  const nodeVersion = process.versions.node;
+  const major = parseInt(nodeVersion.split(".")[0], 10);
+  check(major >= 18, `Node.js version ${nodeVersion} (>= 18)`, `Node.js version ${nodeVersion} is below required 18`, false);
+
+  // Summary
+  const totalChecks = total();
+  if (failures > 0) {
+    console.log(`\n  doctor: ${passed}/${totalChecks} checks passed (${failures} failures, ${warnings} warnings)\n`);
+    process.exit(1);
+  } else if (warnings > 0) {
+    console.log(`\n  doctor: ${passed}/${totalChecks} checks passed (${warnings} warnings)\n`);
+  } else {
+    console.log(`\n  doctor: ${passed}/${totalChecks} checks passed\n`);
+  }
+}
+
 function showHelp() {
   console.log(`
   MAO — Multi-Agent Orchestrator v${VERSION}
@@ -356,6 +459,7 @@ function showHelp() {
     mao-orchestrator status           Show installation status
     mao-orchestrator uninstall        Remove MAO from current project
     mao-orchestrator validate [path]  Validate a task-graph.json file
+    mao-orchestrator doctor           Check plugin integrity and environment
     mao-orchestrator --help           Show this help
     mao-orchestrator --version        Show version
 
@@ -380,6 +484,9 @@ switch (command) {
     break;
   case "validate":
     cmdValidate(args[1]);
+    break;
+  case "doctor":
+    cmdDoctor();
     break;
   case "--version":
   case "-v":
