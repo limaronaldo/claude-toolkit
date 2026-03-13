@@ -14,7 +14,7 @@
     "test": "node --test tests/claude_toolkit.test.mjs"
   },
   "dependencies": {
-    "claude-primer": "^1.8.1",
+    "claude-primer": "^1.9.0",
     "mao-orchestrator": "^1.3.0"
   },
   "keywords": [

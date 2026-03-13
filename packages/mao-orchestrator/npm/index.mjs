@@ -340,6 +340,65 @@ function cmdValidate(graphPath) {
     }
 
     info(`Valid task graph: ${data.tasks.length} tasks, ${(data.dag_waves || []).length} waves`);
+
+    // ── Advisory warnings (do not affect exit code) ──
+
+    if (data.tasks) {
+      const VERIFY_INDICATORS = [
+        "&&", "||", "test ", "npm ", "npx ", "node ", "pytest", "go test",
+        "cargo test", "make ", "bash ", "sh ", "-c ", "grep ", "--",
+      ];
+      const COMMON_COMMAND_PREFIXES = [
+        "ls", "cat", "echo", "cd", "rm", "cp", "mv", "mkdir", "touch",
+        "find", "grep", "sed", "awk", "curl", "wget", "git", "docker",
+        "npm", "npx", "node", "python", "pytest", "go", "cargo", "make",
+        "bash", "sh", "test", "diff", "wc", "[",
+      ];
+
+      for (const task of data.tasks) {
+        // 1. Verify field: check if it looks like prose rather than a shell command
+        if (task.verify && typeof task.verify === "string") {
+          const v = task.verify.trim();
+          const hasIndicator = VERIFY_INDICATORS.some(ind => v.includes(ind));
+          const firstWord = v.split(/\s/)[0].replace(/^[.\/]+/, "");
+          const startsWithCommand = COMMON_COMMAND_PREFIXES.some(
+            cmd => firstWord === cmd || firstWord.startsWith(cmd + "/") || v.startsWith("./") || v.startsWith("/")
+          );
+          if (!hasIndicator && !startsWithCommand) {
+            warn(`Task ${task.id} verify field may not be a shell command: "${v}"`);
+          }
+        }
+
+        // 2. Complexity factor range checks
+        if (task.complexity_factors && typeof task.complexity_factors === "object") {
+          const cf = task.complexity_factors;
+          const rangeChecks = [
+            { key: "files_touched", min: 0, max: 2 },
+            { key: "new_logic", min: 0, max: 2 },
+            { key: "security_risk", min: 0, max: 1 },
+            { key: "concurrency", min: 0, max: 1 },
+          ];
+          for (const { key, min, max } of rangeChecks) {
+            if (key in cf && (typeof cf[key] === "number") && (cf[key] < min || cf[key] > max)) {
+              warn(`Task ${task.id} complexity_factors.${key} = ${cf[key]} is out of range [${min}-${max}]`);
+            }
+          }
+        }
+
+        // 3. Score vs model consistency
+        if (typeof task.complexity_score === "number" && task.model) {
+          const score = task.complexity_score;
+          let expectedModel;
+          if (score < 4) expectedModel = "haiku";
+          else if (score <= 7) expectedModel = "sonnet";
+          else expectedModel = "opus";
+
+          if (task.model !== expectedModel) {
+            warn(`Task ${task.id} has complexity_score ${score} (suggests ${expectedModel}) but model is "${task.model}"`);
+          }
+        }
+      }
+    }
   } catch (e) {
     error(`Invalid JSON: ${e.message}`);
     process.exit(1);

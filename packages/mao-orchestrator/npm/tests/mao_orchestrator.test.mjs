@@ -540,6 +540,153 @@ describe("integration: validate with quality_level config", () => {
   });
 });
 
+// ── Validate Warnings ──
+
+describe("validate warnings", () => {
+  const tmpDir = path.join(__dirname, "..", ".test-validate-warnings");
+
+  before(() => {
+    fs.mkdirSync(tmpDir, { recursive: true });
+  });
+
+  after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function writeGraph(filename, tasks) {
+    const graph = {
+      tasks,
+      dag_waves: [{ wave: 1, tasks: tasks.map(t => t.id) }],
+      config: { max_parallel: 4 },
+    };
+    const p = path.join(tmpDir, filename);
+    fs.writeFileSync(p, JSON.stringify(graph));
+    return p;
+  }
+
+  it("warns when verify field looks like prose", () => {
+    const graphPath = writeGraph("prose-verify.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], verify: "it should work" },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph/);
+    assert.match(output, /Warning|verify field may not be a shell command.*it should work/);
+  });
+
+  it("does not warn when verify field is a shell command", () => {
+    const graphPath = writeGraph("shell-verify.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], verify: "npm test" },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph/);
+    assert.ok(!output.includes("verify field may not be a shell command"));
+  });
+
+  it("does not warn for verify with && operator", () => {
+    const graphPath = writeGraph("and-verify.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], verify: "ls src && echo ok" },
+    ]);
+    const output = run("validate", graphPath);
+    assert.ok(!output.includes("verify field may not be a shell command"));
+  });
+
+  it("does not warn for verify starting with common commands", () => {
+    const graphPath = writeGraph("cmd-verify.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], verify: "ls -la src/" },
+    ]);
+    const output = run("validate", graphPath);
+    assert.ok(!output.includes("verify field may not be a shell command"));
+  });
+
+  it("warns when complexity_factors.files_touched is out of range", () => {
+    const graphPath = writeGraph("cf-files.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_factors: { files_touched: 5 } },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph/);
+    assert.match(output, /files_touched = 5 is out of range \[0-2\]/);
+  });
+
+  it("warns when complexity_factors.new_logic is out of range", () => {
+    const graphPath = writeGraph("cf-logic.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_factors: { new_logic: 3 } },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /new_logic = 3 is out of range \[0-2\]/);
+  });
+
+  it("warns when complexity_factors.security_risk is out of range", () => {
+    const graphPath = writeGraph("cf-security.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_factors: { security_risk: 2 } },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /security_risk = 2 is out of range \[0-1\]/);
+  });
+
+  it("warns when complexity_factors.concurrency is out of range", () => {
+    const graphPath = writeGraph("cf-concurrency.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_factors: { concurrency: -1 } },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /concurrency = -1 is out of range \[0-1\]/);
+  });
+
+  it("does not warn when complexity_factors are within range", () => {
+    const graphPath = writeGraph("cf-ok.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_factors: { files_touched: 1, new_logic: 2, security_risk: 0, concurrency: 1 } },
+    ]);
+    const output = run("validate", graphPath);
+    assert.ok(!output.includes("out of range"));
+  });
+
+  it("warns when model mismatches complexity_score routing (low score, non-haiku)", () => {
+    const graphPath = writeGraph("score-model-low.json", [
+      { id: "T1", name: "task1", model: "opus", deps: [], complexity_score: 2 },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph/);
+    assert.match(output, /complexity_score 2 \(suggests haiku\) but model is "opus"/);
+  });
+
+  it("warns when model mismatches complexity_score routing (mid score, non-sonnet)", () => {
+    const graphPath = writeGraph("score-model-mid.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_score: 5 },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /complexity_score 5 \(suggests sonnet\) but model is "haiku"/);
+  });
+
+  it("warns when model mismatches complexity_score routing (high score, non-opus)", () => {
+    const graphPath = writeGraph("score-model-high.json", [
+      { id: "T1", name: "task1", model: "sonnet", deps: [], complexity_score: 9 },
+    ]);
+    const output = run("validate", graphPath);
+    assert.match(output, /complexity_score 9 \(suggests opus\) but model is "sonnet"/);
+  });
+
+  it("does not warn when model matches complexity_score routing", () => {
+    const graphPath = writeGraph("score-model-ok.json", [
+      { id: "T1", name: "task1", model: "haiku", deps: [], complexity_score: 2 },
+      { id: "T2", name: "task2", model: "sonnet", deps: [], complexity_score: 5 },
+      { id: "T3", name: "task3", model: "opus", deps: [], complexity_score: 8 },
+    ]);
+    const output = run("validate", graphPath);
+    assert.ok(!output.includes("suggests"));
+  });
+
+  it("exits with code 0 even when warnings are present", () => {
+    const graphPath = writeGraph("warnings-exit-0.json", [
+      { id: "T1", name: "task1", model: "opus", deps: [], complexity_score: 1, verify: "it should work", complexity_factors: { files_touched: 99 } },
+    ]);
+    const { status, output } = runWithStatus("validate", graphPath);
+    assert.equal(status, 0);
+    assert.match(output, /Valid task graph/);
+    assert.match(output, /verify field may not be a shell command/);
+    assert.match(output, /out of range/);
+    assert.match(output, /suggests haiku/);
+  });
+});
+
 // ── Validate ──
 
 describe("validate command", () => {
