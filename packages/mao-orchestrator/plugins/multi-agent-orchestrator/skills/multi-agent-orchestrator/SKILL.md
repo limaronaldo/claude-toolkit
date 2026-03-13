@@ -9,6 +9,8 @@ description: >
   "decompose", "plan and execute", or wants to optimize Claude Code usage costs.
   Even if the user just says "implement X" where X is clearly multi-file or multi-concern,
   use this skill to decompose and coordinate efficiently.
+argument-hint: "[task description]"
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(*), Agent
 ---
 
 # Multi-Agent Orchestrator
