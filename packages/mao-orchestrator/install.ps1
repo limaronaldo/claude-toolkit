@@ -1,75 +1,54 @@
 # MAO — Multi-Agent Orchestrator installer for Windows
-# Usage: irm https://raw.githubusercontent.com/aiconnai/mao-marketplace/main/install.ps1 | iex
+# Usage: irm https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/mao-orchestrator/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 
-$MaoHome = if ($env:MAO_HOME) { $env:MAO_HOME } else { Join-Path $env:USERPROFILE ".mao" }
-$Repo = "https://github.com/aiconnai/mao-marketplace.git"
-$ClaudeDir = Join-Path $env:USERPROFILE ".claude"
-
-function Info($msg)  { Write-Host "  ✓ $msg" -ForegroundColor Green }
+function Info($msg)  { Write-Host "  > $msg" -ForegroundColor Green }
 function Warn($msg)  { Write-Host "  ! $msg" -ForegroundColor Yellow }
-function Err($msg)   { Write-Host "  ✗ $msg" -ForegroundColor Red }
+function Err($msg)   { Write-Host "  x $msg" -ForegroundColor Red; exit 1 }
 
 Write-Host ""
 Write-Host "  MAO — Multi-Agent Orchestrator"
 Write-Host ""
 
-# Check git
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Err "git is required but not found. Install git first."
-    exit 1
+# Check Node.js
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Err "Node.js is required. Install it from https://nodejs.org"
 }
 
-# Clone or update
-if (Test-Path (Join-Path $MaoHome ".git")) {
-    Info "Updating existing installation at $MaoHome"
-    Push-Location $MaoHome
-    git pull --ff-only --quiet
-    Pop-Location
-} else {
-    if (Test-Path $MaoHome) {
-        Warn "Removing stale $MaoHome (not a git repo)"
-        Remove-Item -Recurse -Force $MaoHome
-    }
-    Info "Cloning MAO to $MaoHome"
-    git clone --depth 1 --quiet $Repo $MaoHome
+$NodeVersion = (node --version) -replace '^v', ''
+$Major = [int]($NodeVersion -split '\.')[0]
+if ($Major -lt 18) {
+    Err "Node.js >= 18 required (found $NodeVersion)"
+}
+Info "Node.js $NodeVersion"
+
+# Check npm
+if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Err "npm is required but not found"
 }
 
-$Plugin = Join-Path $MaoHome "plugins\multi-agent-orchestrator"
+# Install
+Info "Installing mao-orchestrator..."
+npm install -g mao-orchestrator
+if ($LASTEXITCODE -ne 0) { Err "npm install failed" }
 
-# Create directories
-$CommandsDir = Join-Path $ClaudeDir "commands"
-$AgentsDir = Join-Path $ClaudeDir "agents"
-$SkillsDir = Join-Path $ClaudeDir "skills"
-New-Item -ItemType Directory -Force -Path $CommandsDir | Out-Null
-New-Item -ItemType Directory -Force -Path $AgentsDir | Out-Null
-New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
-
-# Copy commands
-$cmds = Get-ChildItem (Join-Path $Plugin "commands") -Filter "*.md"
-foreach ($cmd in $cmds) {
-    Copy-Item $cmd.FullName (Join-Path $CommandsDir $cmd.Name) -Force
+# Verify
+try {
+    $Version = (mao-orchestrator --version 2>$null)
+    Info "Installed mao-orchestrator $Version"
+} catch {
+    Warn "Installed but could not verify version"
 }
-Info "$($cmds.Count) commands → $CommandsDir"
 
-# Copy agents
-$agents = Get-ChildItem (Join-Path $Plugin "agents") -Filter "*.md"
-foreach ($agent in $agents) {
-    Copy-Item $agent.FullName (Join-Path $AgentsDir $agent.Name) -Force
-}
-Info "$($agents.Count) agents → $AgentsDir"
-
-# Copy skill
-$SkillSrc = Join-Path $Plugin "skills\multi-agent-orchestrator"
-$SkillDest = Join-Path $SkillsDir "multi-agent-orchestrator"
-if (Test-Path $SkillDest) { Remove-Item -Recurse -Force $SkillDest }
-Copy-Item -Recurse $SkillSrc $SkillDest
-Info "1 skill → $SkillsDir"
+# Install globally
+Info "Installing MAO agents, commands, and skills..."
+mao-orchestrator init --global
+if ($LASTEXITCODE -ne 0) { Warn "Init failed — run manually: mao-orchestrator init --global" }
 
 Write-Host ""
-Write-Host "  Installed! Commands /mao, /mao-plan, /mao-status are now available globally."
+Info "Installed! Commands /mao, /mao-plan, /mao-status are now available globally."
 Write-Host ""
-Write-Host "  Update:    cd $MaoHome; git pull"
-Write-Host "  Uninstall: Remove-Item -Recurse $MaoHome; Remove-Item $CommandsDir\mao*.md; Remove-Item $AgentsDir\mao-*.md; Remove-Item -Recurse $SkillDest"
+Info "Update:    npm update -g mao-orchestrator"
+Info "Uninstall: mao-orchestrator uninstall; npm uninstall -g mao-orchestrator"
 Write-Host ""

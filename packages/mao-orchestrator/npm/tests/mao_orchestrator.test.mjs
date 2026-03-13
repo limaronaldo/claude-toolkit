@@ -241,6 +241,305 @@ describe("uninstall command", () => {
   });
 });
 
+// ── Integration: Full Lifecycle ──
+
+describe("integration: init → doctor → validate → uninstall lifecycle", () => {
+  const tmpDir = path.join(__dirname, "..", ".test-lifecycle");
+
+  before(() => {
+    fs.mkdirSync(tmpDir, { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".gitignore"), "node_modules/\n");
+  });
+
+  after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("full lifecycle runs without errors", () => {
+    // Step 1: Init
+    const initOutput = execFileSync("node", [CLI, "init"], {
+      encoding: "utf-8", timeout: 15_000, cwd: tmpDir,
+    });
+    assert.match(initOutput, /3 commands/);
+    assert.match(initOutput, /8 agents/);
+
+    // Step 2: Doctor should pass after init (plugin checks)
+    const doctorOutput = execFileSync("node", [CLI, "doctor"], {
+      encoding: "utf-8", timeout: 10_000, cwd: tmpDir,
+    });
+    assert.match(doctorOutput, /doctor: \d+\/\d+ checks passed/);
+
+    // Step 3: Validate a task graph
+    const graphDir = path.join(tmpDir, ".orchestrator", "state");
+    fs.mkdirSync(graphDir, { recursive: true });
+    const graph = {
+      tasks: [
+        { id: "T1", name: "setup", model: "haiku", deps: [] },
+        { id: "T2", name: "implement", model: "sonnet", deps: ["T1"] },
+      ],
+      dag_waves: [
+        { wave: 1, tasks: ["T1"] },
+        { wave: 2, tasks: ["T2"] },
+      ],
+      config: { quality_level: "standard", max_parallel: 4 },
+    };
+    const graphPath = path.join(graphDir, "task-graph.json");
+    fs.writeFileSync(graphPath, JSON.stringify(graph));
+
+    const validateOutput = execFileSync("node", [CLI, "validate", graphPath], {
+      encoding: "utf-8", timeout: 10_000, cwd: tmpDir,
+    });
+    assert.match(validateOutput, /Valid task graph: 2 tasks, 2 waves/);
+
+    // Step 4: Uninstall
+    const uninstallOutput = execFileSync("node", [CLI, "uninstall"], {
+      encoding: "utf-8", timeout: 10_000, cwd: tmpDir,
+    });
+    assert.match(uninstallOutput, /Removed \d+ items/);
+
+    // Step 5: Verify files are gone
+    const claudeDir = path.join(tmpDir, ".claude");
+    assert.ok(!fs.existsSync(path.join(claudeDir, "commands", "mao.md")));
+    assert.ok(!fs.existsSync(path.join(claudeDir, "agents", "mao-orchestrator.md")));
+  });
+});
+
+// ── Integration: Installed Files Match Source ──
+
+describe("integration: installed files match plugin source", () => {
+  const tmpDir = path.join(__dirname, "..", ".test-file-match");
+  const pluginDir = path.join(__dirname, "..", "plugin");
+
+  before(() => {
+    fs.mkdirSync(tmpDir, { recursive: true });
+    execFileSync("node", [CLI, "init"], {
+      encoding: "utf-8", timeout: 15_000, cwd: tmpDir,
+    });
+  });
+
+  after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("installed agent files match source plugin files", () => {
+    const agents = ["mao-orchestrator.md", "mao-implementer.md", "mao-verifier.md", "mao-worker.md"];
+    for (const agent of agents) {
+      const src = fs.readFileSync(path.join(pluginDir, "agents", agent), "utf-8");
+      const installed = fs.readFileSync(path.join(tmpDir, ".claude", "agents", agent), "utf-8");
+      assert.equal(installed, src, `Agent ${agent} content mismatch`);
+    }
+  });
+
+  it("installed command files match source plugin files", () => {
+    for (const cmd of ["mao.md", "mao-plan.md", "mao-status.md"]) {
+      const src = fs.readFileSync(path.join(pluginDir, "commands", cmd), "utf-8");
+      const installed = fs.readFileSync(path.join(tmpDir, ".claude", "commands", cmd), "utf-8");
+      assert.equal(installed, src, `Command ${cmd} content mismatch`);
+    }
+  });
+
+  it("installed SKILL.md files match source plugin files", () => {
+    for (const skill of ["multi-agent-orchestrator", "mao-plan", "mao-tdd"]) {
+      const src = fs.readFileSync(path.join(pluginDir, "skills", skill, "SKILL.md"), "utf-8");
+      const installed = fs.readFileSync(path.join(tmpDir, ".claude", "skills", skill, "SKILL.md"), "utf-8");
+      assert.equal(installed, src, `Skill ${skill}/SKILL.md content mismatch`);
+    }
+  });
+
+  it("installed reference files include tdd-whiteboard.md and patch-protocol.md", () => {
+    const refsDir = path.join(tmpDir, ".claude", "skills", "multi-agent-orchestrator", "references");
+    assert.ok(fs.existsSync(path.join(refsDir, "tdd-whiteboard.md")), "tdd-whiteboard.md missing");
+    assert.ok(fs.existsSync(path.join(refsDir, "patch-protocol.md")), "patch-protocol.md missing");
+    assert.ok(fs.existsSync(path.join(refsDir, "model-routing.md")), "model-routing.md missing");
+    assert.ok(fs.existsSync(path.join(refsDir, "self-correction.md")), "self-correction.md missing");
+  });
+
+  it("installed rule files match source plugin files", () => {
+    for (const rule of ["cost-discipline.md", "worktree-hygiene.md", "commit-format.md"]) {
+      const src = fs.readFileSync(path.join(pluginDir, "rules", rule), "utf-8");
+      const installed = fs.readFileSync(path.join(tmpDir, ".claude", "rules", rule), "utf-8");
+      assert.equal(installed, src, `Rule ${rule} content mismatch`);
+    }
+  });
+
+  it("installed hook files match source plugin files", () => {
+    for (const hook of ["pre-commit-tdd.sh", "post-task-review.sh", "pre-merge-verify.sh"]) {
+      const src = fs.readFileSync(path.join(pluginDir, "hooks", hook), "utf-8");
+      const installed = fs.readFileSync(path.join(tmpDir, ".claude", "hooks", hook), "utf-8");
+      assert.equal(installed, src, `Hook ${hook} content mismatch`);
+    }
+  });
+});
+
+// ── Integration: Init Idempotency ──
+
+describe("integration: init is idempotent", () => {
+  const tmpDir = path.join(__dirname, "..", ".test-idempotent");
+
+  before(() => {
+    fs.mkdirSync(tmpDir, { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, ".gitignore"), "node_modules/\n");
+  });
+
+  after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("running init twice produces the same result", () => {
+    // First init
+    execFileSync("node", [CLI, "init"], {
+      encoding: "utf-8", timeout: 15_000, cwd: tmpDir,
+    });
+
+    // Snapshot file list
+    const claudeDir = path.join(tmpDir, ".claude");
+    const listFiles = (dir) => {
+      const results = [];
+      if (!fs.existsSync(dir)) return results;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) results.push(...listFiles(full));
+        else results.push(full);
+      }
+      return results.sort();
+    };
+    const firstFiles = listFiles(claudeDir);
+    const firstContents = {};
+    for (const f of firstFiles) {
+      firstContents[f] = fs.readFileSync(f, "utf-8");
+    }
+
+    // Second init
+    execFileSync("node", [CLI, "init"], {
+      encoding: "utf-8", timeout: 15_000, cwd: tmpDir,
+    });
+
+    const secondFiles = listFiles(claudeDir);
+    assert.deepEqual(secondFiles, firstFiles, "File list should be identical after second init");
+
+    for (const f of secondFiles) {
+      assert.equal(
+        fs.readFileSync(f, "utf-8"),
+        firstContents[f],
+        `File content changed after second init: ${f}`
+      );
+    }
+  });
+
+  it(".gitignore does not duplicate .orchestrator/ entry", () => {
+    const gitignore = fs.readFileSync(path.join(tmpDir, ".gitignore"), "utf-8");
+    const matches = gitignore.match(/\.orchestrator\//g);
+    assert.equal(matches.length, 1, ".orchestrator/ should appear only once");
+  });
+});
+
+// ── Integration: Validate with quality_level ──
+
+describe("integration: validate with quality_level config", () => {
+  const tmpDir = path.join(__dirname, "..", ".test-quality");
+
+  before(() => {
+    fs.mkdirSync(path.join(tmpDir, ".orchestrator", "state"), { recursive: true });
+  });
+
+  after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("accepts task graph with quality_level: standard", () => {
+    const graph = {
+      tasks: [
+        { id: "T1", name: "setup", model: "haiku", deps: [] },
+      ],
+      dag_waves: [{ wave: 1, tasks: ["T1"] }],
+      config: { quality_level: "standard", max_parallel: 4 },
+    };
+    const graphPath = path.join(tmpDir, "standard.json");
+    fs.writeFileSync(graphPath, JSON.stringify(graph));
+
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph: 1 tasks, 1 waves/);
+  });
+
+  it("accepts task graph with quality_level: quality", () => {
+    const graph = {
+      tasks: [
+        { id: "T1", name: "setup", model: "sonnet", deps: [] },
+        { id: "T2", name: "core", model: "opus", deps: ["T1"] },
+        { id: "T3", name: "tests", model: "sonnet", deps: ["T2"] },
+      ],
+      dag_waves: [
+        { wave: 1, tasks: ["T1"] },
+        { wave: 2, tasks: ["T2"] },
+        { wave: 3, tasks: ["T3"] },
+      ],
+      config: {
+        quality_level: "quality",
+        max_parallel: 4,
+        max_opus_concurrent: 2,
+        escalation_budget: 5,
+      },
+    };
+    const graphPath = path.join(tmpDir, "quality.json");
+    fs.writeFileSync(graphPath, JSON.stringify(graph));
+
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph: 3 tasks, 3 waves/);
+  });
+
+  it("accepts task graph matching template schema", () => {
+    // Full template-matching graph with all fields
+    const graph = {
+      intent: "Test full template compliance",
+      created_at: new Date().toISOString(),
+      config: {
+        quality_level: "standard",
+        max_parallel_agents: 4,
+        max_opus_concurrent: 1,
+        max_retries_per_task: 2,
+        escalation_budget: 3,
+        max_opus_invocations: 5,
+      },
+      tasks: [
+        {
+          id: "T1",
+          name: "scaffold",
+          description: "Create project structure",
+          complexity_score: 2,
+          model: "haiku",
+          deps: [],
+          tools: ["Read", "Write"],
+          verify: "ls -la src/",
+          status: "pending",
+        },
+        {
+          id: "T2",
+          name: "implement",
+          description: "Core logic",
+          complexity_score: 6,
+          model: "sonnet",
+          deps: ["T1"],
+          tools: ["Read", "Write", "Bash"],
+          verify: "npm test",
+          status: "pending",
+        },
+      ],
+      dag_waves: [
+        { wave: 1, tasks: ["T1"], parallel: true },
+        { wave: 2, tasks: ["T2"], parallel: true },
+      ],
+      worktrees: {},
+      escalation_log: [],
+      exploration_log: [],
+    };
+    const graphPath = path.join(tmpDir, "full-template.json");
+    fs.writeFileSync(graphPath, JSON.stringify(graph));
+
+    const output = run("validate", graphPath);
+    assert.match(output, /Valid task graph: 2 tasks, 2 waves/);
+  });
+});
+
 // ── Validate ──
 
 describe("validate command", () => {
