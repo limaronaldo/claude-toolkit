@@ -26,6 +26,14 @@ const COMMANDS = [
   "mao-status.md",
 ];
 
+const SKILLS = [
+  "multi-agent-orchestrator",
+  "mao-plan",
+  "mao-worktree",
+  "mao-tdd",
+  "mao-review",
+];
+
 // ── Helpers ──
 
 function info(msg) { console.log(`  \x1b[32m✓\x1b[0m ${msg}`); }
@@ -86,12 +94,16 @@ function cmdInit(global) {
     }
     info(`${AGENTS.length} agents → ${agentsDir}`);
 
-    // Symlink skill
-    const skillSrc = path.join(PLUGIN_DIR, "skills", "multi-agent-orchestrator");
-    const skillDest = path.join(claudeDir, "skills", "multi-agent-orchestrator");
+    // Symlink skills
     fs.mkdirSync(path.join(claudeDir, "skills"), { recursive: true });
-    symlinkSafe(skillSrc, skillDest);
-    info(`1 skill → ${path.join(claudeDir, "skills")}`);
+    for (const skill of SKILLS) {
+      const skillSrc = path.join(PLUGIN_DIR, "skills", skill);
+      if (fs.existsSync(skillSrc)) {
+        const skillDest = path.join(claudeDir, "skills", skill);
+        symlinkSafe(skillSrc, skillDest);
+      }
+    }
+    info(`${SKILLS.length} skills → ${path.join(claudeDir, "skills")}`);
 
     console.log(`\n  Installed globally. Commands available in all Claude Code sessions.\n`);
   } else {
@@ -120,11 +132,15 @@ function cmdInit(global) {
     }
     info(`${AGENTS.length} agents → ${agentsDir}`);
 
-    // Copy skill
-    const skillSrc = path.join(PLUGIN_DIR, "skills", "multi-agent-orchestrator");
-    const skillDest = path.join(claudeDir, "skills", "multi-agent-orchestrator");
-    copyDir(skillSrc, skillDest);
-    info(`1 skill → ${skillDest}`);
+    // Copy skills
+    for (const skill of SKILLS) {
+      const skillSrc = path.join(PLUGIN_DIR, "skills", skill);
+      if (fs.existsSync(skillSrc)) {
+        const skillDest = path.join(claudeDir, "skills", skill);
+        copyDir(skillSrc, skillDest);
+      }
+    }
+    info(`${SKILLS.length} skills → ${path.join(claudeDir, "skills")}`);
 
     // Add .orchestrator/ to .gitignore
     const gitignore = path.join(target, ".gitignore");
@@ -152,10 +168,10 @@ function cmdStatus() {
   for (const { label, dir } of locations) {
     const cmds = COMMANDS.filter(c => fs.existsSync(path.join(dir, "commands", c)));
     const agents = AGENTS.filter(a => fs.existsSync(path.join(dir, "agents", a)));
-    const hasSkill = fs.existsSync(path.join(dir, "skills", "multi-agent-orchestrator", "SKILL.md"));
+    const skillCount = SKILLS.filter(s => fs.existsSync(path.join(dir, "skills", s, "SKILL.md"))).length;
 
-    if (cmds.length || agents.length || hasSkill) {
-      info(`${label}: ${cmds.length} commands, ${agents.length} agents, ${hasSkill ? 1 : 0} skill`);
+    if (cmds.length || agents.length || skillCount) {
+      info(`${label}: ${cmds.length} commands, ${agents.length} agents, ${skillCount} skills`);
     } else {
       warn(`${label}: not installed`);
     }
@@ -178,10 +194,12 @@ function cmdUninstall() {
     const p = path.join(claudeDir, "agents", agent);
     if (fs.existsSync(p)) { fs.unlinkSync(p); removed++; }
   }
-  const skillDir = path.join(claudeDir, "skills", "multi-agent-orchestrator");
-  if (fs.existsSync(skillDir)) {
-    fs.rmSync(skillDir, { recursive: true });
-    removed++;
+  for (const skill of SKILLS) {
+    const skillDir = path.join(claudeDir, "skills", skill);
+    if (fs.existsSync(skillDir)) {
+      fs.rmSync(skillDir, { recursive: true });
+      removed++;
+    }
   }
 
   if (removed) {
