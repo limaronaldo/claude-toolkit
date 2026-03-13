@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PLUGIN_DIR = path.join(__dirname, "plugin");
+const PLUGIN_DIR = path.join(__dirname, "plugin", "multi-agent-orchestrator");
 const VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf-8")).version;
 
 const AGENTS = [

@@ -308,7 +308,7 @@ describe("integration: init → doctor → validate → uninstall lifecycle", ()
 
 describe("integration: installed files match plugin source", () => {
   const tmpDir = path.join(__dirname, "..", ".test-file-match");
-  const pluginDir = path.join(__dirname, "..", "plugin");
+  const pluginDir = path.join(__dirname, "..", "plugin", "multi-agent-orchestrator");
 
   before(() => {
     fs.mkdirSync(tmpDir, { recursive: true });

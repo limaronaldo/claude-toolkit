@@ -54,7 +54,7 @@ ignore = ["E501"]  # line length handled by formatter
 testpaths = ["tests"]
 
 [tool.coverage.run]
-source = ["."]
+source = ["claude_primer"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
