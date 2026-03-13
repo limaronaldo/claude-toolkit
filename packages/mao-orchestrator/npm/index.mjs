@@ -34,6 +34,18 @@ const SKILLS = [
   "mao-review",
 ];
 
+const HOOKS = [
+  "pre-commit-tdd.sh",
+  "post-task-review.sh",
+  "pre-merge-verify.sh",
+];
+
+const RULES = [
+  "cost-discipline.md",
+  "worktree-hygiene.md",
+  "commit-format.md",
+];
+
 // ── Helpers ──
 
 function info(msg) { console.log(`  \x1b[32m✓\x1b[0m ${msg}`); }
@@ -105,6 +117,30 @@ function cmdInit(global) {
     }
     info(`${SKILLS.length} skills → ${path.join(claudeDir, "skills")}`);
 
+    // Symlink hooks
+    const hooksDir = path.join(claudeDir, "hooks");
+    fs.mkdirSync(hooksDir, { recursive: true });
+    for (const hook of HOOKS) {
+      const hookSrc = path.join(PLUGIN_DIR, "hooks", hook);
+      if (fs.existsSync(hookSrc)) {
+        const hookDest = path.join(hooksDir, hook);
+        symlinkSafe(hookSrc, hookDest);
+      }
+    }
+    info(`${HOOKS.length} hooks → ${hooksDir}`);
+
+    // Symlink rules
+    const rulesDir = path.join(claudeDir, "rules");
+    fs.mkdirSync(rulesDir, { recursive: true });
+    for (const rule of RULES) {
+      const ruleSrc = path.join(PLUGIN_DIR, "rules", rule);
+      if (fs.existsSync(ruleSrc)) {
+        const ruleDest = path.join(rulesDir, rule);
+        symlinkSafe(ruleSrc, ruleDest);
+      }
+    }
+    info(`${RULES.length} rules → ${rulesDir}`);
+
     console.log(`\n  Installed globally. Commands available in all Claude Code sessions.\n`);
   } else {
     const target = process.cwd();
@@ -142,6 +178,28 @@ function cmdInit(global) {
     }
     info(`${SKILLS.length} skills → ${path.join(claudeDir, "skills")}`);
 
+    // Copy hooks
+    const hooksDir = path.join(claudeDir, "hooks");
+    fs.mkdirSync(hooksDir, { recursive: true });
+    for (const hook of HOOKS) {
+      const hookSrc = path.join(PLUGIN_DIR, "hooks", hook);
+      if (fs.existsSync(hookSrc)) {
+        fs.copyFileSync(hookSrc, path.join(hooksDir, hook));
+      }
+    }
+    info(`${HOOKS.length} hooks → ${hooksDir}`);
+
+    // Copy rules
+    const rulesDir = path.join(claudeDir, "rules");
+    fs.mkdirSync(rulesDir, { recursive: true });
+    for (const rule of RULES) {
+      const ruleSrc = path.join(PLUGIN_DIR, "rules", rule);
+      if (fs.existsSync(ruleSrc)) {
+        fs.copyFileSync(ruleSrc, path.join(rulesDir, rule));
+      }
+    }
+    info(`${RULES.length} rules → ${rulesDir}`);
+
     // Add .orchestrator/ to .gitignore
     const gitignore = path.join(target, ".gitignore");
     if (fs.existsSync(gitignore)) {
@@ -169,9 +227,11 @@ function cmdStatus() {
     const cmds = COMMANDS.filter(c => fs.existsSync(path.join(dir, "commands", c)));
     const agents = AGENTS.filter(a => fs.existsSync(path.join(dir, "agents", a)));
     const skillCount = SKILLS.filter(s => fs.existsSync(path.join(dir, "skills", s, "SKILL.md"))).length;
+    const hookCount = HOOKS.filter(h => fs.existsSync(path.join(dir, "hooks", h))).length;
+    const ruleCount = RULES.filter(r => fs.existsSync(path.join(dir, "rules", r))).length;
 
     if (cmds.length || agents.length || skillCount) {
-      info(`${label}: ${cmds.length} commands, ${agents.length} agents, ${skillCount} skills`);
+      info(`${label}: ${cmds.length} commands, ${agents.length} agents, ${skillCount} skills, ${hookCount} hooks, ${ruleCount} rules`);
     } else {
       warn(`${label}: not installed`);
     }
@@ -200,6 +260,14 @@ function cmdUninstall() {
       fs.rmSync(skillDir, { recursive: true });
       removed++;
     }
+  }
+  for (const hook of HOOKS) {
+    const p = path.join(claudeDir, "hooks", hook);
+    if (fs.existsSync(p)) { fs.unlinkSync(p); removed++; }
+  }
+  for (const rule of RULES) {
+    const p = path.join(claudeDir, "rules", rule);
+    if (fs.existsSync(p)) { fs.unlinkSync(p); removed++; }
   }
 
   if (removed) {

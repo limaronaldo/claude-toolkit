@@ -69,6 +69,22 @@ Skip this skill for 1-2 file changes — direct implementation is faster.
 | `references/self-correction.md` | Retry and escalation strategies |
 | `references/worktree-ops.md` | Git worktree setup and teardown |
 
+## Hooks
+
+| Hook | What it does |
+|------|-------------|
+| `hooks/pre-commit-tdd.sh` | Verifies tests for staged files, runs test suite |
+| `hooks/post-task-review.sh` | Flags tasks pending review after completion |
+| `hooks/pre-merge-verify.sh` | Type-check + lint + tests before worktree merge |
+
+## Rules
+
+| Rule | Enforces |
+|------|----------|
+| `rules/cost-discipline.md` | Model routing targets (40-50% haiku, 5-15% opus) |
+| `rules/worktree-hygiene.md` | Worktree isolation, cleanup, .gitignore checks |
+| `rules/commit-format.md` | Conventional commits with task ID scope |
+
 ## Part of
 
 [limaronaldo/claude-toolkit](https://github.com/limaronaldo/claude-toolkit) — monorepo containing Claude Primer + MAO Orchestrator + claude-supertools CLI.

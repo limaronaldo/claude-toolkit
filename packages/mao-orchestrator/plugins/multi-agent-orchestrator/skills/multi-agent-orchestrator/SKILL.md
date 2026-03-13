@@ -50,6 +50,26 @@ These skills work standalone OR as part of the full orchestration:
 | `/mao-tdd` | Test-driven development cycle | Phase 3 — Execute |
 | `/mao-review` | Structured code review | Phase 5 — Review |
 
+## Hooks
+
+Automate workflow enforcement. Install to `.claude/hooks/` or `.git/hooks/`:
+
+| Hook | Trigger | What it does |
+|------|---------|-------------|
+| `pre-commit-tdd.sh` | Before commit | Verifies tests exist for staged source files, runs test suite |
+| `post-task-review.sh` | After task completion | Flags completed tasks pending review |
+| `pre-merge-verify.sh` | Before worktree merge | Runs type-check + lint + tests before allowing merge |
+
+## Rules
+
+Always-loaded guidelines (install to `.claude/rules/`):
+
+| Rule | Enforces |
+|------|----------|
+| `cost-discipline.md` | 40-50% haiku, 40-45% sonnet, 5-15% opus; max 3-5 Opus calls per run |
+| `worktree-hygiene.md` | .gitignore check, one agent per worktree, cleanup after merge |
+| `commit-format.md` | Conventional commits with task ID scope, no co-authored-by |
+
 ## Reference Files
 
 Read these as needed during execution. Don't load all upfront.
