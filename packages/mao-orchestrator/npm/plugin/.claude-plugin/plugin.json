@@ -1,0 +1,24 @@
+{
+  "name": "multi-agent-orchestrator",
+  "version": "1.0.0",
+  "description": "Orchestrates multi-agent workflows with intelligent Opus/Sonnet/Haiku model tiering, DAG-based task scheduling, git worktrees for parallelism, and self-correction loops (Reflexion, error correction, peer review, exploration).",
+  "author": {
+    "name": "aiconnai"
+  },
+  "license": "MIT",
+  "keywords": [
+    "multi-agent",
+    "orchestration",
+    "model-tiering",
+    "opus",
+    "sonnet",
+    "haiku",
+    "worktrees",
+    "dag",
+    "self-correction",
+    "cost-optimization"
+  ],
+  "skills": [
+    "./"
+  ]
+}

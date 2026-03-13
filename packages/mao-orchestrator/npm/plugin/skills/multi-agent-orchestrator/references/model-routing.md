@@ -78,14 +78,14 @@ score = files_touched × 1
 
 ### Factor Definitions
 
-| Factor | Value | Trigger |
-|--------|-------|---------|
-| `files_touched` | 1 | Task modifies 3+ files |
-| `new_logic` | 3 | Task creates new algorithms, business rules, or decision trees (not CRUD) |
-| `security_risk` | 5 | Task involves auth, encryption, access control, data sanitization, or PII |
-| `concurrency` | 5 | Task involves race conditions, locks, async coordination, or shared state |
+| Factor | Weight | 0 | 1 | 2 |
+|--------|--------|---|---|---|
+| `files_touched` | x1 | Single file | 2-3 files | 4+ files |
+| `new_logic` | x3 | None/trivial | Moderate logic | Significant new algorithms |
+| `security_risk` | x5 | None | Auth, crypto, injection, PII | — |
+| `concurrency` | x5 | None | Race conditions, locks, async | — |
 
-Each factor is binary (0 or 1). Maximum possible score: 14.
+Factors scored 0-2 (security_risk and concurrency are 0-1). Maximum possible score: 18.
 
 ## Pattern-Based Routing
 
