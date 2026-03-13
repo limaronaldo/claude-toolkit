@@ -6,6 +6,9 @@
   "bin": {
     "mao-orchestrator": "index.mjs"
   },
+  "scripts": {
+    "test": "node --test tests/mao_orchestrator.test.mjs"
+  },
   "files": [
     "index.mjs",
     "README.md",

@@ -67,6 +67,19 @@ jobs:
           fi
           echo "All required files present."
 
+  test-node:
+    name: Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: cd packages/mao-orchestrator/npm && node --test tests/mao_orchestrator.test.mjs
+
   lint-shell:
     name: Lint Shell Scripts
     runs-on: ubuntu-latest
