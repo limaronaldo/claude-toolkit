@@ -1,9 +1,9 @@
 ---
 name: mao-tdd
 description: >
-  Enforces test-driven development during task execution. Use before writing
-  any implementation code — write the failing test first, watch it fail,
-  then implement. Triggers on "implement", "build", "fix", "add feature",
+  Enforces strict test-driven development via a RED-GREEN-REFACTOR state machine.
+  Use before writing any implementation code — write the failing test first, watch
+  it fail, then implement. Triggers on "implement", "build", "fix", "add feature",
   or any task that produces code changes. Also use when the user says
   "test first", "TDD", or "red green refactor".
 argument-hint: "[feature or fix to implement]"
@@ -12,44 +12,115 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(*)
 
 # MAO TDD — Test-Driven Development
 
-Every code change follows the Red-Green-Refactor cycle. No exceptions without
-explicit user permission.
+Every code change follows the Red-Green-Refactor cycle as a strict state machine.
+No exceptions without explicit user permission.
 
-## The Cycle
+## State Machine
 
-### RED — Write a Failing Test
+The TDD cycle is NOT a suggestion — it is a sequential state machine with mandatory
+validation gates between each state. You MUST complete each state before advancing.
 
-Write the smallest test that demonstrates the desired behavior:
+```
+  ┌─────────────────────────────────────────────────┐
+  │                                                 │
+  ▼                                                 │
+┌───────┐    test FAILS     ┌───────┐    tests    ┌──────────┐
+│  RED  │ ───────────────▶ │ GREEN │ ──────────▶ │ REFACTOR │
+│       │                   │       │   PASS      │          │
+└───────┘                   └───────┘             └──────────┘
+  │ test                      │ test                │ tests
+  │ PASSES                    │ FAILS               │ FAIL
+  ▼                           ▼                     ▼
+  REJECT:                     RETRY:                ROLLBACK:
+  test is                     fix impl,             revert to
+  trivial or                  max 3                 GREEN code
+  wrong                       attempts
+```
 
-1. Identify what the code should do (one behavior per test)
-2. Write a test that asserts that behavior
-3. Run the test — it MUST fail
-4. Verify it fails for the RIGHT reason (missing function, wrong return value — NOT syntax error or import failure)
+### STATE: RED — Write a Failing Test
 
-If the test passes immediately, it proves nothing. Delete it and write a meaningful one.
+**Goal:** Prove that the desired behavior is NOT yet implemented.
 
-### GREEN — Make It Pass
+1. Identify the NEXT SINGLE behavior to implement
+2. Write ONE test that asserts that behavior
+3. Run the test suite
+4. **GATE: The new test MUST FAIL**
+   - If it PASSES: the test is trivial or wrong — delete it, write a meaningful one
+   - If it fails for the WRONG reason (syntax error, import failure): fix the test, not the implementation
+   - If it fails for the RIGHT reason (missing function, wrong return value): proceed to GREEN
 
-Write the simplest code that makes the test pass:
+**Output after RED:**
+```
+[TDD:RED] Test: {test name}
+[TDD:RED] Command: {test command}
+[TDD:RED] Result: FAIL (expected)
+[TDD:RED] Failure reason: {why it failed}
+[TDD:RED] → Advancing to GREEN
+```
 
-1. Implement only what the test requires — nothing more
-2. Run the test — it MUST pass
-3. Run the full test suite — no regressions
+**STOP HERE.** Do not write implementation code in the same response as the test.
+Wait for the test execution result before proceeding.
 
-Resist the urge to add "while I'm here" improvements. That's the refactor step.
+### STATE: GREEN — Make It Pass
 
-### REFACTOR — Clean Up
+**Goal:** Write the MINIMUM code that makes the failing test pass.
 
-With green tests as your safety net:
+1. Implement ONLY what the test requires — nothing more
+2. No edge cases unless they have a failing test
+3. No optimizations, no "while I'm here" improvements
+4. Run the test suite
+5. **GATE: ALL tests MUST PASS**
+   - If the new test FAILS: fix the implementation (max 3 attempts, then escalate)
+   - If an existing test REGRESSES: fix the regression before proceeding
+
+**Output after GREEN:**
+```
+[TDD:GREEN] Implementation: {brief description}
+[TDD:GREEN] Command: {test command}
+[TDD:GREEN] Result: PASS (all {N} tests)
+[TDD:GREEN] → Advancing to REFACTOR
+```
+
+### STATE: REFACTOR — Clean Up (with safety net)
+
+**Goal:** Improve code quality WITHOUT changing behavior.
 
 1. Remove duplication
 2. Improve naming
-3. Extract helpers if genuinely needed (not speculatively)
-4. Run tests after every change — stay green
+3. Extract helpers only if genuinely needed (not speculatively)
+4. Run tests after EVERY change — stay green
+5. **GATE: ALL tests MUST STILL PASS**
+   - If any test FAILS: immediately rollback to the GREEN code
+   - Refactoring that breaks tests is not refactoring — it's a bug
 
-## Anti-Patterns to Catch
+**Output after REFACTOR:**
+```
+[TDD:REFACTOR] Changes: {what was cleaned up}
+[TDD:REFACTOR] Command: {test command}
+[TDD:REFACTOR] Result: PASS (all {N} tests)
+[TDD:REFACTOR] → Cycle complete. Next behavior or done.
+```
 
-These are violations. Stop and correct if you catch yourself doing any:
+### REPEAT
+
+Return to RED for the next behavior. Continue until all behaviors specified in
+the task are covered.
+
+## Violation Detection
+
+These are state machine violations. STOP and correct immediately:
+
+| Violation | State | Correction |
+|---|---|---|
+| Writing implementation before a test | Pre-RED | Delete implementation, go to RED |
+| Test passes on first run | RED | Test is trivial/wrong — rewrite it |
+| Writing more code than the test requires | GREEN | Remove excess, stay minimal |
+| Adding features during refactor | REFACTOR | Revert, save for next RED cycle |
+| Skipping refactor entirely | Post-GREEN | Always evaluate — even "nothing to refactor" is valid |
+| Writing multiple tests before implementing | RED | One test at a time — one cycle at a time |
+| Writing test AND implementation in same response | RED | STOP after test — wait for execution result |
+
+## Anti-Patterns
 
 | Anti-Pattern | Why It's Wrong |
 |---|---|
@@ -59,27 +130,31 @@ These are violations. Stop and correct if you catch yourself doing any:
 | "Just this once" without tests | Technical debt compounds; the untested code will break later |
 | Over-mocking | Tests pass but production breaks — mock only external boundaries |
 | Testing implementation details | Tests become brittle; test behavior and public API, not internals |
+| Tests that mirror implementation | Tests should specify WHAT, not HOW — they're executable specs |
 
 ## Verification Checklist
 
 Before marking any task complete:
 
 - [ ] Every new function/method has a corresponding test
-- [ ] Each test was observed failing before implementation
+- [ ] Each test was observed failing before implementation (RED gate passed)
 - [ ] Failures were for expected reasons (not typos or missing imports)
-- [ ] Minimal code was written to pass each test
+- [ ] Minimal code was written to pass each test (GREEN gate passed)
+- [ ] Refactoring did not break any tests (REFACTOR gate passed)
 - [ ] Full test suite passes with clean output
 - [ ] Edge cases covered (empty input, boundaries, error paths)
 - [ ] No mocks for things that can be tested directly
+- [ ] TDD log output shows proper RED→GREEN→REFACTOR transitions
 
 ## Integration with MAO
 
 When working as part of a MAO orchestration:
 
-- **mao-implementer** agents follow this cycle for every task
+- **mao-implementer** agents MUST follow this state machine for every task
 - **mao-worker** agents follow it for non-trivial tasks (skip for pure config/boilerplate)
-- **mao-verifier** agents run the full verification checklist
-- The task is NOT done until the checklist passes
+- **mao-verifier** agents verify the TDD log output shows proper RED→GREEN→REFACTOR transitions
+- The task is NOT done until the verification checklist passes
+- The **pre-commit-tdd.sh** hook enforces test existence at commit time
 
 ## Framework Detection
 
