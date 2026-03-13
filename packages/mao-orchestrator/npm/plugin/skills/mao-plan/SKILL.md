@@ -6,7 +6,7 @@ description: >
   refactor, or system build without executing it yet. Triggers on "plan",
   "break down", "decompose", "task graph", or when the user wants to
   understand the work before committing to execution.
-argument-hint: "[task or feature to decompose]"
+argument-hint: "[--quality] [task or feature to decompose]"
 allowed-tools: Read, Glob, Grep, Bash(git log*), Bash(git diff*), Bash(wc*)
 ---
 
@@ -58,16 +58,21 @@ Rate each task using weighted factors:
 | concurrency | ×5 |
 
 **Model routing by score:**
+
+Standard level (default):
 - **0-3** → Haiku (boilerplate, CRUD, config, formatting)
 - **4-7** → Sonnet (features, refactoring, integration, review)
 - **8+** → Opus (architecture, security-critical, novel algorithms)
+- Targets: 40-50% haiku, 40-45% sonnet, 5-15% opus
+- Override: if >30% routes to Opus, re-examine — likely over-scored
 
-**Cost discipline targets:**
-- Haiku: 40-50% of tasks
-- Sonnet: 40-45% of tasks
-- Opus: 5-15% of tasks
+Quality level (`--quality`):
+- **0-3** → Sonnet (boilerplate, CRUD, config, formatting)
+- **4+** → Opus (features, refactoring, security, algorithms)
+- Targets: 0% haiku, 40-50% sonnet, 50-60% opus
 
-Override: if >30% routes to Opus, re-examine — likely over-scored.
+If `--quality` flag is present, set `quality_level: "quality"` in config and adjust budgets:
+`max_opus_invocations: 15`, `max_opus_concurrent: 2`, `escalation_budget: 5`.
 
 ### 5. Map Dependencies
 

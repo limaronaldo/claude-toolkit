@@ -53,6 +53,8 @@ jobs:
             "$BASE/rules/cost-discipline.md"
             "$BASE/rules/worktree-hygiene.md"
             "$BASE/rules/commit-format.md"
+            "$BASE/skills/multi-agent-orchestrator/references/tdd-whiteboard.md"
+            "$BASE/skills/multi-agent-orchestrator/references/patch-protocol.md"
           )
           missing=0
           for f in "${required[@]}"; do

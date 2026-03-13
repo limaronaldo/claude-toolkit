@@ -2,15 +2,35 @@
 
 ## Overview
 
-The system uses three layers of self-correction, each progressively more expensive:
+The system uses five layers of self-correction, each progressively more expensive.
+All correction is driven by deterministic evidence (exit codes, compiler output),
+not LLM judgment about whether code "looks right."
 
 ```
 Layer 1: Self-Review (free — agent checks own work)
-Layer 2: Automated Verification (cheap — Haiku runs tests/lint)
+Layer 2: Deterministic Verification (cheap — test runner, compiler, linter)
 Layer 3: Peer Review (medium — Sonnet reviews another agent's code)
 Layer 4: Model Escalation (expensive — retry with more powerful model)
 Layer 5: Exploration (most expensive — 3 parallel attempts)
 ```
+
+## Core Principle: Rebuild, Don't Resume
+
+**Retry always means recompute from current truth, not continue from old thoughts.**
+
+When a task fails and needs retry:
+1. Read the current workspace state (files as they exist now)
+2. Read the current whiteboard Zone B (latest deterministic evidence)
+3. Build a fresh focused packet for the agent
+4. Agent proposes new patches against the current snapshot
+
+Never pass conversation history from the failed attempt. The agent should see:
+- What the code looks like NOW
+- What the error is NOW
+- What the test expects
+
+This prevents the most common retry failure mode: an agent repeating the same
+mistake because it's reasoning from stale context.
 
 ## Layer 1: Reflexion (Self-Review)
 
@@ -45,41 +65,66 @@ Before reporting completion, answer honestly:
    - At least one error path covered
    - Edge case from point 2 tested
 
+6. Were edits minimal and targeted?
+   - No full-file rewrites
+   - No changes outside scope
+   - Preconditions verified before editing
+
 If ANY answer is "no", fix it before reporting done.
 ```
 
 This catches ~40% of issues before they reach verification.
 
-## Layer 2: Automated Verification
+## Layer 2: Deterministic Verification
 
-The verifier agent runs a deterministic pipeline. On failure:
+The verifier runs a deterministic pipeline. Results are machine-verifiable facts,
+not LLM opinions.
 
-### Error Report Format
+### Evidence Capture
+
+On failure, the verifier captures to whiteboard Zone B:
 
 ```json
 {
   "task_id": "T3",
+  "test_command": "npm test",
+  "exit_code": 1,
   "step": "tests",
   "error_type": "assertion_failure",
   "file": "src/auth/middleware.ts",
   "line": 42,
   "message": "Expected 401 but received 200 for expired token",
-  "context": "The test sends a request with an expired JWT and expects rejection"
+  "failing_assertion": "assert.equal(response.status, 401)",
+  "stack_trace": "at Object.<anonymous> (tests/auth.test.ts:15)",
+  "test_names_failed": ["expired token returns 401"]
 }
 ```
 
-### Feedback to Executor
+### Feedback to Executor on Retry
 
-When retrying, provide the executor with:
-1. The exact error (file, line, message)
-2. The test that failed and what it expected
-3. The specific instruction: "Fix the token expiration check in middleware.ts:42"
+When retrying, build a fresh focused packet from the whiteboard:
 
-Specific feedback produces much better fixes than "tests failed, please fix".
+1. The failing test code (read from disk, not from memory)
+2. The exact error evidence (Zone B)
+3. The relevant implementation spans (re-read from current files)
+4. Specific instruction: "Fix the token expiration check in middleware.ts:42"
+
+Specific evidence produces much better fixes than "tests failed, please fix."
+
+### Diagnosing Failure Type
+
+Not all failures are coding errors. The framework should distinguish:
+
+| Failure Type | Symptom | Action |
+|---|---|---|
+| Retrieval error | Patch targets wrong file/span | Re-run retrieval, not coder |
+| Stale context | Patch preconditions fail | Rebuild context from current state |
+| Overscoped edit | Patch touches unrelated files | Reject patch, ask for focused edit |
+| Implementation error | Tests fail after clean apply | Route back to coder with evidence |
 
 ## Layer 3: Peer Review
 
-The reviewer agent analyzes code that passed verification but may have design issues:
+The reviewer agent analyzes code that passed verification but may have design issues.
 
 ### Review Triggers Correction Tasks
 
@@ -98,6 +143,7 @@ The reviewer agent analyzes code that passed verification but may have design is
 ```
 
 Correction tasks are added to the DAG and scheduled normally.
+Each correction task follows the full TDD cycle (RED→GREEN→REFACTOR).
 
 ## Layer 4: Model Escalation
 
@@ -105,17 +151,17 @@ When an agent fails after 2 retries at the same model tier:
 
 ```
 Haiku failed 2x → Retry with Sonnet
-  - Add all error context from failed attempts
-  - Include: "Previous Haiku agent failed because: {reasons}"
+  - Fresh context from current workspace state
+  - Include deterministic evidence: "Previous attempts failed because: {Zone B evidence}"
 
 Sonnet failed 2x → Retry with Opus
-  - Add all error context
-  - Include: "Both Haiku and Sonnet failed. Errors: {all_errors}"
+  - Fresh context from current workspace state
+  - Include all evidence from both tiers
 ```
 
 ### Escalation Budget
 
-Track escalations per run. Default budget: 3.
+Track escalations per run. Default budget: 3 (standard) or 5 (quality).
 
 ```json
 {
@@ -127,6 +173,7 @@ Track escalations per run. Default budget: 3.
       "from": "haiku",
       "to": "sonnet",
       "reason": "Failed type inference on Rust generics",
+      "evidence": "compiler error at src/parser.rs:142",
       "resolved": true
     }
   ]
@@ -137,12 +184,12 @@ When budget exhausted, stop escalating and report to user.
 
 ## Layer 5: Exploration (Tree-of-Thoughts)
 
-Last resort for high-complexity tasks (score ≥ 8) that failed escalation.
+Last resort for high-complexity tasks (score >= 8) that failed escalation.
 
 ### Trigger Conditions
 
 ALL of these must be true:
-- Task complexity score ≥ 8
+- Task complexity score >= 8
 - Task failed at Opus level
 - Escalation budget allows it
 
@@ -153,9 +200,14 @@ ALL of these must be true:
    - **Conservative**: safest, most conventional approach
    - **Alternative**: different algorithm or design pattern
    - **Minimal**: smallest change that could work
-3. Each explorer implements independently in its own worktree
-4. Reviewer evaluates all three and picks the best
-5. Winning solution is merged, others are discarded
+3. Each explorer gets:
+   - Fresh context from current workspace
+   - The full evidence trail from previous failures
+   - Their assigned strategy as a constraint
+4. Each implements independently in its own worktree
+5. Each follows TDD (RED→GREEN→REFACTOR)
+6. Reviewer evaluates all three and picks the best
+7. Winning solution is merged, others are discarded
 
 ### Cost
 
@@ -172,9 +224,26 @@ After each run, record what worked and what didn't:
   "succeeded": false,
   "escalated_to": "sonnet",
   "succeeded_after_escalation": true,
+  "failure_evidence": "compiler error on complex generics",
   "recommendation": "Route similar tasks directly to sonnet"
 }
 ```
 
 After 3+ similar observations with consistent results,
 add to `patterns.json` with confidence based on success rate.
+
+## Whiteboard Checkpoints
+
+Every state transition produces a checkpoint:
+
+```
+.orchestrator/artifacts/{task_id}/whiteboard-RED-1.json
+.orchestrator/artifacts/{task_id}/whiteboard-GREEN-1.json
+.orchestrator/artifacts/{task_id}/whiteboard-REFACTOR-1.json
+```
+
+On REFACTOR failure, restore `last_green_snapshot_id` automatically.
+On retry, the agent sees the checkpoint, not the failed attempt.
+
+This gives reversibility without requiring the agent to understand rollback.
+The framework handles it.

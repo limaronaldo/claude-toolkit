@@ -1,8 +1,71 @@
 # Model Routing Reference
 
+## Quality Levels
+
+MAO supports two quality levels that control how aggressively models are assigned:
+
+### `standard` (default) — Cost-efficient
+
+Optimizes for cost. Uses the cheapest model that can solve each task.
+
+| Score | Model | Agent | Typical Tasks |
+|-------|-------|-------|---------------|
+| 0-3 | haiku | mao-worker | Migrations, CRUD, boilerplate, docs, config, formatting |
+| 4-7 | sonnet | mao-implementer | Features, refactoring, integration, complex tests |
+| 8-14 | opus | mao-implementer | Security logic, concurrency, novel algorithms, architecture |
+
+**Target distribution:** 40-50% haiku, 40-45% sonnet, 5-15% opus
+**Expected cost savings vs all-opus:** 60-70%
+
+**Override rules:**
+- Decomposition → Opus
+- Verification → Haiku
+- Review → Sonnet
+- Reflection → Opus
+
+### `quality` — Maximum quality
+
+Optimizes for output quality. Shifts tasks up one model tier. Use when correctness matters
+more than cost (security features, production releases, unfamiliar codebases).
+
+| Score | Model | Agent | Typical Tasks |
+|-------|-------|-------|---------------|
+| 0-3 | sonnet | mao-implementer | Migrations, CRUD, boilerplate, docs, config |
+| 4-7 | opus | mao-implementer | Features, refactoring, integration, complex tests |
+| 8-14 | opus | mao-implementer | Security logic, concurrency, novel algorithms |
+
+**Target distribution:** 0% haiku, 40-50% sonnet, 50-60% opus
+**Expected cost savings vs all-opus:** 20-30%
+
+**Override rules:**
+- Decomposition → Opus
+- Verification → Sonnet (upgraded from haiku)
+- Review → Opus (upgraded from sonnet)
+- Reflection → Opus
+
+**Budget adjustments for `quality` level:**
+```json
+{
+  "max_opus_invocations": 15,
+  "max_opus_concurrent": 2,
+  "escalation_budget": 5
+}
+```
+
+### How to choose
+
+| Situation | Level |
+|-----------|-------|
+| Routine features, familiar codebase | `standard` |
+| Prototyping, boilerplate-heavy work | `standard` |
+| Security-critical code | `quality` |
+| Production release prep | `quality` |
+| Unfamiliar or complex codebase | `quality` |
+| High-stakes refactoring | `quality` |
+
 ## Complexity Scoring
 
-Every task is scored to determine the cheapest model that can solve it.
+Every task is scored to determine model assignment based on the active quality level.
 
 ### Scoring Formula
 
@@ -23,23 +86,6 @@ score = files_touched × 1
 | `concurrency` | 5 | Task involves race conditions, locks, async coordination, or shared state |
 
 Each factor is binary (0 or 1). Maximum possible score: 14.
-
-### Routing Table
-
-| Score | Model | Agent | Typical Tasks |
-|-------|-------|-------|---------------|
-| 0-3 | haiku | mao-worker | Migrations, CRUD, boilerplate, docs, config, formatting |
-| 4-7 | sonnet | mao-implementer | Features, refactoring, integration, complex tests |
-| 8-14 | opus | mao-implementer | Security logic, concurrency, novel algorithms, architecture |
-
-### Override Rules
-
-These override the score-based routing:
-
-1. **Decomposition is always Opus** — understanding the problem deeply pays for itself
-2. **Verification is always Haiku** — deterministic checks don't need reasoning
-3. **Review is always Sonnet** — needs reasoning but not the deepest level
-4. **Reflection is always Opus** — meta-analysis benefits from deep reasoning
 
 ## Pattern-Based Routing
 
@@ -77,11 +123,23 @@ Pattern matching is keyword-based: if the task name/description contains the
 
 Per-run limits to prevent cost explosions:
 
+**Standard level:**
 ```json
 {
   "max_opus_invocations": 5,
+  "max_opus_concurrent": 1,
   "max_total_tasks": 20,
   "escalation_budget": 3
+}
+```
+
+**Quality level:**
+```json
+{
+  "max_opus_invocations": 15,
+  "max_opus_concurrent": 2,
+  "max_total_tasks": 20,
+  "escalation_budget": 5
 }
 ```
 
@@ -105,6 +163,7 @@ report failure to user instead of continuing to escalate.
 
 ## Decision Tree
 
+### Standard Level
 ```
 Is this task decomposition or reflection?
   YES → Opus
@@ -126,4 +185,27 @@ Compute complexity score:
   0-3 → Haiku (mao-worker)
   4-7 → Sonnet (mao-implementer)
   8+  → Opus (mao-implementer with opus override)
+```
+
+### Quality Level
+```
+Is this task decomposition or reflection?
+  YES → Opus
+  NO ↓
+
+Is this verification (tests, lint, type-check)?
+  YES → Sonnet
+  NO ↓
+
+Is this code review?
+  YES → Opus
+  NO ↓
+
+Does a learned pattern match with confidence ≥ 0.7?
+  YES → Use max(pattern's model, sonnet)
+  NO ↓
+
+Compute complexity score:
+  0-3 → Sonnet (mao-implementer)
+  4+  → Opus (mao-implementer)
 ```
