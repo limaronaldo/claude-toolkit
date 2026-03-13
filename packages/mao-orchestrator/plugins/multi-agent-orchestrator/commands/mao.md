@@ -1,12 +1,22 @@
 ---
 description: Multi-agent orchestration with model tiering, parallel execution, and self-correction
-argument-hint: <task-description>
+argument-hint: "[--quality] <task-description>"
 ---
 # Multi-Agent Orchestrator: $ARGUMENTS
 
 You are the **Orchestrator** in a multi-agent system. You will decompose the user's request,
 schedule tasks across model tiers (Opus/Sonnet/Haiku), execute them in parallel using git
 worktrees, verify results, and merge everything together.
+
+## Quality Level
+
+Check if `$ARGUMENTS` starts with `--quality`. If so:
+- Set `quality_level: "quality"` in the task graph config
+- Use the **quality** routing table throughout all phases
+- Remove `--quality` from the task description
+- Adjust budgets: `max_opus_invocations: 15`, `max_opus_concurrent: 2`, `escalation_budget: 5`
+
+Otherwise, use `quality_level: "standard"` (default).
 
 ## Triage
 
@@ -46,7 +56,7 @@ score = files_touched × 1    (1 if 3+ files modified)
       + concurrency × 5      (1 if race conditions, locks, async coordination)
 ```
 
-Routing:
+#### Standard level (default):
 
 | Score | Model | Role | Typical Tasks |
 |-------|-------|------|---------------|
@@ -54,8 +64,19 @@ Routing:
 | 4-7 | sonnet | implementer | Features, refactoring, integration, tests |
 | 8-14 | opus | implementer | Security, concurrency, novel algorithms |
 
-Cost discipline: target 40-50% haiku, 40-45% sonnet, 5-15% opus.
-NEVER use opus for CRUD, boilerplate, formatting, imports, or docs.
+Target: 40-50% haiku, 40-45% sonnet, 5-15% opus.
+
+#### Quality level (`--quality`):
+
+| Score | Model | Role | Typical Tasks |
+|-------|-------|------|---------------|
+| 0-3 | sonnet | implementer | Migrations, CRUD, boilerplate, config, docs |
+| 4-7 | opus | implementer | Features, refactoring, integration, tests |
+| 8-14 | opus | implementer | Security, concurrency, novel algorithms |
+
+Target: 0% haiku, 40-50% sonnet, 50-60% opus.
+
+Use the routing table matching the active `quality_level`.
 
 ### 1d. Map Dependencies
 
@@ -75,6 +96,7 @@ Write `.orchestrator/state/task-graph.json`:
   "intent": "Clear statement of what user wants",
   "created_at": "ISO timestamp",
   "config": {
+    "quality_level": "standard",
     "max_parallel_agents": 4,
     "max_opus_concurrent": 1,
     "max_retries_per_task": 2,
@@ -428,11 +450,20 @@ Report the final result to the user.
 
 ## Resource Constraints
 
+### Standard level
 - Max parallel agents: **4**
 - Max opus concurrent: **1**
 - Max retries per task: **2**
 - Escalation budget: **3** per run
 - Max opus invocations: **5** per run
+- 1 agent = 1 worktree, never shared
+
+### Quality level
+- Max parallel agents: **4**
+- Max opus concurrent: **2**
+- Max retries per task: **2**
+- Escalation budget: **5** per run
+- Max opus invocations: **15** per run
 - 1 agent = 1 worktree, never shared
 
 ## Rules

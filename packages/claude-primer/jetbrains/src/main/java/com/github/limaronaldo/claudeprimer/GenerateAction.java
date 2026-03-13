@@ -30,7 +30,11 @@ public class GenerateAction extends AnAction {
             });
             handler.startNotify();
         } catch (Exception ex) {
-            // claude-primer not found on PATH
+            com.intellij.openapi.ui.Messages.showErrorDialog(
+                project,
+                "Could not launch claude-primer: " + ex.getMessage() + "\n\nMake sure it is installed and on your PATH:\n  npm install -g claude-primer",
+                "Claude Primer Error"
+            );
         }
     }
 }

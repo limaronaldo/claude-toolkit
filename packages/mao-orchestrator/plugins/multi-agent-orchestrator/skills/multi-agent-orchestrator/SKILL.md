@@ -25,9 +25,16 @@ can solve them — with self-correction loops ensuring quality.
 Opus UNDERSTANDS → Sonnet ORCHESTRATES → Haiku/Sonnet/Opus EXECUTE
 ```
 
-Use Opus sparingly: decomposition, architecture, meta-reflection only.
-Use Sonnet for orchestration, implementation, and review.
-Use Haiku for mechanical tasks, verification, and boilerplate.
+### Quality Levels
+
+MAO supports two quality levels that control model assignment:
+
+- **`standard`** (default) — cost-efficient. Uses cheapest model per task.
+  `/mao <task>` or `/mao-plan <task>`
+- **`quality`** — maximum quality. Shifts all tasks up one model tier.
+  `/mao --quality <task>` or `/mao-plan --quality <task>`
+
+See `references/model-routing.md` for detailed routing tables per level.
 
 ## When to Use This Skill
 
@@ -81,6 +88,8 @@ Read these as needed during execution. Don't load all upfront.
 | Model Routing | `references/model-routing.md` | Assigning models to tasks |
 | Self-Correction | `references/self-correction.md` | When verification fails |
 | Worktrees | `references/worktree-ops.md` | Setting up parallel execution |
+| TDD State | `references/tdd-whiteboard.md` | Context whiteboard for TDD cycles |
+| Editing | `references/patch-protocol.md` | Minimal patch-based editing protocol |
 
 ## The Workflow
 
@@ -163,18 +172,40 @@ The orchestrator creates and manages:
 
 ## Cost Targets
 
+### Standard level
+
 | Model | % of Tasks | When |
 |-------|-----------|------|
 | Haiku | 40-50% | Boilerplate, CRUD, verification, formatting |
 | Sonnet | 40-45% | Features, orchestration, review, refactoring |
 | Opus | 5-15% | Decomposition, reflection, security, novel algorithms |
 
-Expected savings vs all-Opus: **60-70%**.
+Expected savings vs all-Opus: **60-70%**. Max Opus invocations: 5.
+
+### Quality level
+
+| Model | % of Tasks | When |
+|-------|-----------|------|
+| Sonnet | 40-50% | Boilerplate, CRUD, config, verification |
+| Opus | 50-60% | Features, review, orchestration, algorithms, architecture |
+
+Expected savings vs all-Opus: **20-30%**. Max Opus invocations: 15.
 
 ## Constraints
 
-- Max parallel agents: 4-6 (practical Claude Code limit)
-- Max Opus invocations per run: 3-5
+### Standard level
+- Max parallel agents: 4
+- Max Opus concurrent: 1
+- Max Opus invocations per run: 5
+- Escalation budget: 3
+
+### Quality level
+- Max parallel agents: 4
+- Max Opus concurrent: 2
+- Max Opus invocations per run: 15
+- Escalation budget: 5
+
+### Both levels
 - 1 agent = 1 worktree, never shared
 - If `model:` field has issues, use `opusplan` mode as fallback
 

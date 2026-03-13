@@ -80,11 +80,22 @@ function cmdDoctor() {
   const cwd = process.cwd();
   let healthy = true;
 
-  // Check Primer outputs
+  // Check Primer outputs (supports both standard and clean-root layouts)
+  const cleanRootDir = path.join(cwd, ".claude", "docs");
+  const isCleanRoot = fs.existsSync(cleanRootDir);
+  if (isCleanRoot) {
+    info("Clean-root layout detected (.claude/docs/)");
+  }
+
   const primerFiles = ["CLAUDE.md", "STANDARDS.md", "QUICKSTART.md", "ERRORS_AND_LESSONS.md"];
   for (const file of primerFiles) {
-    if (fs.existsSync(path.join(cwd, file))) {
+    // CLAUDE.md is always at root; others may be in .claude/docs/ with clean-root
+    const rootPath = path.join(cwd, file);
+    const cleanPath = path.join(cleanRootDir, file);
+    if (fs.existsSync(rootPath)) {
       info(file);
+    } else if (file !== "CLAUDE.md" && isCleanRoot && fs.existsSync(cleanPath)) {
+      info(`${file} (clean-root: .claude/docs/)`);
     } else {
       warn(`${file} — missing (run: claude-toolkit init)`);
       healthy = false;
