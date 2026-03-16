@@ -42,7 +42,8 @@ Browse and discover all available MAO skills. Use this when you're unsure which 
 | Skill | Command | Use when... |
 |-------|---------|-------------|
 | **MAO Review** | `/mao-review` | Peer review of implemented changes — correctness, conventions, security, edge cases |
-| **MAO Security** | `/mao-security` | Security-focused review: secrets, injection, auth, rate limiting, OWASP Top 10 |
+| **MAO Security** | `/mao-security` | Static security review: secrets, injection, auth, rate limiting, OWASP Top 10 (every PR) |
+| **MAO Pentest** | `/mao-pentest` | Dynamic security testing via Shannon — confirms exploitability with real attacks on staging (pre-release) |
 
 ### Architecture & Design
 
@@ -57,7 +58,8 @@ Browse and discover all available MAO skills. Use this when you're unsure which 
 → `/mao-plan` → `/mao-tdd` → `/mao-review`
 
 **"I need to secure my code"**
-→ `/mao-security` or activate `mao-security-reviewer` agent
+→ `/mao-security` (static review, every PR) + `mao-security-reviewer` agent
+→ `/mao-pentest` (dynamic proof-of-exploit, pre-release staging only)
 
 **"I need to design a REST API"**
 → `/mao-api-design`
