@@ -29,7 +29,7 @@ import { execSync } from "child_process";
 import readline from "readline";
 import os from "os";
 
-const __version__ = "1.8.1";
+const __version__ = "1.9.0";
 
 // ─────────────────────────────────────────────
 // Constants
@@ -2699,6 +2699,7 @@ async function run(target, opts = {}) {
     cleanRoot = false, templateDir = null,
     agents = null, outputFormat = "markdown",
     pluginDir = null,
+    quality = false,
   } = opts;
   let { withRalph = false } = opts;
 
@@ -2719,6 +2720,7 @@ async function run(target, opts = {}) {
   console.log(`  claude-primer v${__version__}`);
   console.log(`  Target: ${target}`);
   let modeLabel = dryRun ? "DRY RUN" : "LIVE";
+  if (quality) modeLabel += " +quality";
   if (!interactive) modeLabel += " (non-interactive)";
   console.log(`  Mode:   ${modeLabel}`);
   console.log(`${"=".repeat(60)}\n`);
@@ -3610,6 +3612,7 @@ function parseArgs(argv) {
     migrate: false,
     init: false,
     update: false,
+    quality: false,
   };
 
   const positional = [];
@@ -3676,6 +3679,7 @@ function parseArgs(argv) {
       case "--migrate": args.migrate = true; break;
       case "--init": args.init = true; break;
       case "--update": args.update = true; break;
+      case "--quality": args.quality = true; break;
       case "--help": case "-h":
         console.log(`claude-primer — Claude Code Knowledge Architecture Bootstrap
 
@@ -3711,6 +3715,7 @@ Usage:
   claude-primer --telemetry-off            # disable telemetry
   claude-primer --migrate                   # convert .claude-setup.rc to .claude-primer.toml
   claude-primer --init                      # interactively create .claude-primer.toml
+  claude-primer --quality                    # optimize for output quality
   claude-primer --update                    # self-update to latest release`);
         process.exit(0);
         break;
@@ -3743,6 +3748,7 @@ function collectTelemetry(args, info, durationMs) {
   if (args.cleanRoot) flags.push("clean-root");
   if (args.watch) flags.push("watch");
   if (args.watchAuto) flags.push("watch-auto");
+  if (args.quality) flags.push("quality");
   if (args.agent) flags.push(`agent=${args.agent}`);
   if (args.format !== "markdown") flags.push(`format=${args.format}`);
   if (args.templateDir) flags.push("template-dir");
@@ -4454,6 +4460,7 @@ async function main() {
     outputFormat: args.format,
     pluginDir: args.pluginDir,
     mao: args.mao,
+    quality: args.quality,
   });
 
   const _telemetryInfo = fs.existsSync(path.resolve(args.target)) ? scanDirectory(path.resolve(args.target)) : {};

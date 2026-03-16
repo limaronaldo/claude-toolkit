@@ -35,7 +35,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Optional
 
-__version__ = "1.8.1"
+__version__ = "1.9.0"
 
 # ─────────────────────────────────────────────
 # Constants
@@ -2968,7 +2968,8 @@ def run(target: Path, dry_run: bool = False, force: bool = False,
         force_all: bool = False, from_doc: Optional[str] = None,
         clean_root: bool = False, template_dir: Optional[str] = None,
         agents: Optional[list] = None, output_format: str = "markdown",
-        plugin_dir: Optional[str] = None, with_mao: bool = False):
+        plugin_dir: Optional[str] = None, with_mao: bool = False,
+        quality: bool = False):
 
     target = target.resolve()
 
@@ -2987,6 +2988,8 @@ def run(target: Path, dry_run: bool = False, force: bool = False,
     print(f"  claude-primer v{__version__}")
     print(f"  Target: {target}")
     mode_label = "DRY RUN" if dry_run else "LIVE"
+    if quality:
+        mode_label += " +quality"
     if not interactive:
         mode_label += " (non-interactive)"
     print(f"  Mode:   {mode_label}")
@@ -4413,6 +4416,7 @@ Examples:
   claude-primer --export out.zip      # export docs to zip archive
   claude-primer --migrate             # convert .claude-setup.rc to .claude-primer.toml
   claude-primer --init                # interactively create .claude-primer.toml
+  claude-primer --quality              # optimize for output quality
   claude-primer --update              # self-update to latest release
         """,
     )
@@ -4464,6 +4468,8 @@ Examples:
                         help="Convert .claude-setup.rc to .claude-primer.toml")
     parser.add_argument("--init", action="store_true",
                         help="Interactively create .claude-primer.toml config file")
+    parser.add_argument("--quality", action="store_true",
+                        help="Optimize for output quality (shift model routing up one tier)")
     parser.add_argument("--update", action="store_true",
                         help="Self-update to the latest release from GitHub")
 
@@ -4578,6 +4584,7 @@ Examples:
         output_format=args.format,
         plugin_dir=args.plugin_dir,
         with_mao=args.mao,
+        quality=args.quality,
     )
 
     _telemetry_info = scan_directory(Path(args.target).resolve()) if Path(args.target).exists() else {}
@@ -4589,7 +4596,7 @@ def _collect_telemetry(args, info: dict, duration_s: float) -> dict:
     flags = []
     for flag in ["dry_run", "force", "force_all", "with_readme", "with_ralph",
                   "no_git_check", "plan_json", "reconfigure", "clean_root",
-                  "watch", "watch_auto"]:
+                  "watch", "watch_auto", "quality"]:
         if getattr(args, flag, False):
             flags.append(flag.replace("_", "-"))
     if getattr(args, "agent", None):
