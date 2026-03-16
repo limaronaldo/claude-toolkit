@@ -1,0 +1,95 @@
+language: "en-US"
+
+tone_instructions: >
+  Be concise and actionable. Focus on bugs, security issues, and performance problems.
+  Skip style nitpicks — we have linters for that. When suggesting changes, include
+  code examples. Acknowledge good patterns, not just issues.
+
+reviews:
+  enabled: true
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  changed_files_summary: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+      - "[skip review]"
+    base_branches:
+      - "main"
+
+  path_filters:
+    - "!docs/site/**"
+    - "!build/**"
+    - "!dist/**"
+    - "!**/*.lock"
+    - "!**/*.snap"
+    - "!**/*.generated.*"
+    - "!**/fixtures/**"
+    - "!**/*.min.js"
+    - "!LICENSE"
+
+  path_instructions:
+    - path: "packages/claude-primer/npm/**"
+      instructions: |
+        Claude Primer npm package. Single-file CLI (index.mjs) that generates
+        CLAUDE.md and context docs. Review for correct file I/O, template logic,
+        and CLI argument handling. Zero dependencies — flag any added deps.
+
+    - path: "packages/claude-primer/python/**"
+      instructions: |
+        Claude Primer Python package. Single-file CLI (claude_primer.py) that
+        mirrors the npm version. Review for Python idioms, correct file handling,
+        and argparse usage. Zero dependencies — flag any added deps.
+
+    - path: "packages/mao-orchestrator/npm/**"
+      instructions: |
+        MAO Orchestrator npm package. CLI (index.mjs) that installs agents,
+        commands, skills, hooks, and rules into .claude/. Review for correct
+        path handling, symlink/copy logic, and CLI commands.
+
+    - path: "packages/mao-orchestrator/plugins/**"
+      instructions: |
+        MAO plugin content: agent definitions, skill docs, rules, hooks, commands.
+        These are Markdown/shell files consumed by Claude Code. Review for clarity,
+        correctness of instructions, and consistency across agents/skills.
+
+    - path: "packages/claude-toolkit/npm/**"
+      instructions: |
+        Meta-CLI that combines claude-primer and mao-orchestrator. Review for
+        correct passthrough to sub-CLIs and unified init/doctor/update logic.
+
+    - path: ".github/workflows/**"
+      instructions: |
+        CI/CD workflows. Review for correct path filters, secret usage,
+        proper permissions, and that tag-prefixed releases trigger the right workflow.
+
+    - path: "**/*.test.*"
+      instructions: "Ensure tests cover edge cases. Do not nitpick test style."
+
+  tools:
+    gitleaks:
+      enabled: true
+    shellcheck:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: "auto"
+  issues:
+    scope: "auto"
