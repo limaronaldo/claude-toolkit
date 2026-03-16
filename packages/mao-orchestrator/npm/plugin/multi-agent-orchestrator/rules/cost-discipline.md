@@ -45,3 +45,32 @@ Optimize for output quality — shift tasks up one model tier.
 - 1 Opus call costs roughly 10x a Haiku call
 - Standard: expected savings vs all-Opus: 60-70%
 - Quality: expected savings vs all-Opus: 20-30%
+
+## Context Management
+
+Avoid the last 20% of the context window for:
+- Large-scale refactoring
+- Feature implementation spanning multiple files
+- Debugging complex interactions
+
+Lower context sensitivity tasks (safe near the window limit):
+- Single-file edits
+- Independent utility creation
+- Documentation updates
+- Simple bug fixes
+
+### Extended Thinking
+
+Extended thinking is enabled by default, reserving up to 31,999 tokens for internal reasoning.
+
+Control extended thinking via:
+- **Toggle**: Option+T (macOS) / Alt+T (Windows/Linux)
+- **Config**: Set `alwaysThinkingEnabled` in `~/.claude/settings.json`
+- **Budget cap**: `export MAX_THINKING_TOKENS=10000`
+- **Verbose mode**: Ctrl+O to see thinking output
+
+For complex tasks requiring deep reasoning:
+1. Ensure extended thinking is enabled (on by default)
+2. Enable **Plan Mode** for structured approach
+3. Use multiple critique rounds for thorough analysis
+4. Use split role sub-agents for diverse perspectives

@@ -45,3 +45,12 @@ fix(api): handle null response from upstream
 - One logical change per commit
 - Do not add Co-Authored-By trailers
 - Do not add Signed-off-by trailers unless the project requires DCO
+
+## PR Workflow
+
+When creating PRs:
+1. Analyze full commit history (not just latest commit)
+2. Use `git diff [base-branch]...HEAD` to see all changes
+3. Draft comprehensive PR summary
+4. Include test plan with TODOs
+5. Push with `-u` flag if new branch
