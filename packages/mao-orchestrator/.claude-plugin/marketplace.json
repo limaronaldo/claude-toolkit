@@ -11,6 +11,24 @@
   },
   "plugins": [
     {
+      "name": "skills-directory",
+      "description": "Skill Codex — browsable index of all MAO skills with one-line purpose summaries. Use /skills-directory to discover which skill to activate for your task. Covers orchestration, TDD, security, API design, backend patterns, E2E testing, coding standards, verification, and eval-driven development.",
+      "version": "1.0.0",
+      "source": "./plugins/multi-agent-orchestrator",
+      "author": {
+        "name": "limaronaldo"
+      },
+      "category": "reference",
+      "tags": [
+        "skills",
+        "codex",
+        "directory",
+        "reference",
+        "discovery"
+      ],
+      "strict": false
+    },
+    {
       "name": "multi-agent-orchestrator",
       "description": "Orchestrates multi-agent workflows with Opus/Sonnet/Haiku model tiering, DAG-based task scheduling, git worktrees for parallelism, and self-correction loops. Use for complex features, system design, large refactoring, or any task that benefits from decomposition into parallel subtasks.",
       "version": "1.0.0",
