@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.github.limaronaldo.claude-primer</id>
     <name>Claude Primer</name>
-    <vendor email="" url="https://github.com/limaronaldo/claude-primer">limaronaldo</vendor>
+    <vendor email="" url="https://github.com/limaronaldo/claude-toolkit">limaronaldo</vendor>
     <description><![CDATA[
         Generate context-aware knowledge architecture for AI coding assistants.
         Runs claude-primer CLI to create CLAUDE.md, STANDARDS.md, QUICKSTART.md,

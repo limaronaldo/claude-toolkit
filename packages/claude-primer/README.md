@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/claude-primer)](https://pypi.org/project/claude-primer/)
 [![npm](https://img.shields.io/npm/v/claude-primer)](https://www.npmjs.com/package/claude-primer)
-[![GitHub Release](https://img.shields.io/github/v/release/limaronaldo/claude-primer)](https://github.com/limaronaldo/claude-primer/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/limaronaldo/claude-toolkit)](https://github.com/limaronaldo/claude-toolkit/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://ghcr.io/limaronaldo/claude-primer)
 
@@ -32,10 +32,10 @@ Like a real primer, it prepares the surface so everything after it adheres bette
 
 ```bash
 # Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/claude-primer/install.sh | bash
 
 # Windows (PowerShell)
-irm https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/claude-primer/install.ps1 | iex
 ```
 
 ### Package managers
@@ -64,7 +64,7 @@ scoop install claude-primer
 docker run --rm -v "$(pwd):/project" ghcr.io/limaronaldo/claude-primer
 
 # Direct download (no runtime needed)
-# https://github.com/limaronaldo/claude-primer/releases
+# https://github.com/limaronaldo/claude-toolkit/releases
 ```
 
 ### CI/CD

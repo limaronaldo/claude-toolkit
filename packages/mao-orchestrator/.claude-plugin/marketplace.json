@@ -1,13 +1,13 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "mao-marketplace",
+  "name": "claude-toolkit",
   "version": "1.0.0",
   "metadata": {
     "description": "Multi-Agent Orchestrator (MAO) — Intelligent model tiering, DAG scheduling, git worktrees, and self-correction loops for Claude Code",
     "homepage": "https://github.com/limaronaldo/claude-toolkit"
   },
   "owner": {
-    "name": "aiconnai"
+    "name": "limaronaldo"
   },
   "plugins": [
     {
@@ -34,7 +34,7 @@
       "version": "1.0.0",
       "source": "./plugins/multi-agent-orchestrator",
       "author": {
-        "name": "aiconnai"
+        "name": "limaronaldo"
       },
       "category": "workflow",
       "tags": [

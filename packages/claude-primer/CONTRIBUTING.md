@@ -3,8 +3,8 @@
 ## Development Setup
 
 ```bash
-git clone https://github.com/limaronaldo/claude-primer.git
-cd claude-primer
+git clone https://github.com/limaronaldo/claude-toolkit.git
+cd claude-toolkit/packages/claude-primer
 ```
 
 ### Python

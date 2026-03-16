@@ -17,6 +17,6 @@
       { "command": "claude-primer.planJson", "title": "Claude Primer: Plan JSON" }
     ]
   },
-  "repository": { "type": "git", "url": "https://github.com/limaronaldo/claude-primer" },
+  "repository": { "type": "git", "url": "https://github.com/limaronaldo/claude-toolkit" },
   "license": "MIT"
 }

@@ -1,6 +1,6 @@
 name: 'MAO Orchestrator'
 description: 'Validate MAO task graphs and orchestrator artifacts'
-author: 'aiconnai'
+author: 'limaronaldo'
 
 branding:
   icon: 'git-branch'

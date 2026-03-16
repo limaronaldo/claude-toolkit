@@ -1,6 +1,6 @@
 # MAO — Multi-Agent Orchestrator for Claude Code
 
-[![CI](https://github.com/aiconnai/mao-marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/aiconnai/mao-marketplace/actions/workflows/ci.yml)
+[![CI](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/limaronaldo/claude-toolkit/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/mao-orchestrator)](https://www.npmjs.com/package/mao-orchestrator)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -46,28 +46,28 @@ npx mao-orchestrator init --global
 ### curl | bash (No Node Required)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/aiconnai/mao-marketplace/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/mao-orchestrator/install.sh | bash
 ```
 
 ### PowerShell (Windows)
 
 ```powershell
-irm https://raw.githubusercontent.com/aiconnai/mao-marketplace/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/mao-orchestrator/install.ps1 | iex
 ```
 
 ### Claude Code Plugin
 
 ```bash
-/plugin marketplace add aiconnai/mao-marketplace
-/plugin install multi-agent-orchestrator@mao-marketplace
+/plugin marketplace add limaronaldo/claude-toolkit
+/plugin install multi-agent-orchestrator@claude-toolkit
 ```
 
 ### Manual
 
 ```bash
-git clone https://github.com/aiconnai/mao-marketplace.git
-cp -r mao-marketplace/plugins/multi-agent-orchestrator/commands/*.md ~/.claude/commands/
-cp -r mao-marketplace/plugins/multi-agent-orchestrator/agents/*.md ~/.claude/agents/
+git clone https://github.com/limaronaldo/claude-toolkit.git
+cp -r claude-toolkit/packages/mao-orchestrator/plugins/multi-agent-orchestrator/commands/*.md ~/.claude/commands/
+cp -r claude-toolkit/packages/mao-orchestrator/plugins/multi-agent-orchestrator/agents/*.md ~/.claude/agents/
 echo ".orchestrator/" >> .gitignore
 ```
 
@@ -272,7 +272,7 @@ vs. all-Opus baseline: **~60-70% savings**
 ## Project Structure
 
 ```
-mao-marketplace/
+mao-orchestrator/
 ├── .github/workflows/              # CI/CD
 │   ├── ci.yml                      # Lint, validate JSON, check structure
 │   ├── release.yml                 # Publish npm + attach tar.gz
@@ -321,7 +321,7 @@ Validate task-graph.json files in your CI pipeline:
 
 ```yaml
 # .github/workflows/validate-mao.yml
-- uses: aiconnai/mao-marketplace@v1
+- uses: limaronaldo/claude-toolkit@v1
   with:
     task-graph: .orchestrator/state/task-graph.json
 ```
@@ -342,7 +342,7 @@ npx mao-orchestrator validate .orchestrator/state/task-graph.json
 
 ## Links
 
-- [Landing Page](https://aiconnai.github.io/mao-marketplace/)
+- [Landing Page](https://github.com/limaronaldo/claude-toolkit)
 - [Usage Guide](USAGE.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)

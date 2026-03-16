@@ -55,7 +55,7 @@ Releases are triggered by publishing a GitHub Release with tag `vX.Y.Z`. The `.g
 ### Linux / macOS (`install.sh`)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/claude-primer/install.sh | bash
 ```
 
 Behavior:
@@ -73,7 +73,7 @@ Environment variables:
 ### Windows (`install.ps1`)
 
 ```powershell
-irm https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/claude-primer/install.ps1 | iex
 ```
 
 Behavior:

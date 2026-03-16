@@ -14,7 +14,7 @@
 
 ```bash
 # One command (no dependencies)
-curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/claude-primer/install.sh | bash
 
 # Package managers
 pipx run claude-primer          # Python

@@ -24,7 +24,7 @@ npm install -g claude-primer
 brew install limaronaldo/tap/claude-primer
 
 # One-liner (no dependencies)
-curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-primer/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/claude-primer/install.sh | bash
 ```
 
 ## Step 2 — Prime Your Project
@@ -82,8 +82,8 @@ claude-primer --plan-json
 Inside a Claude Code session in your project:
 
 ```
-/plugin marketplace add aiconnai/mao-marketplace
-/plugin install multi-agent-orchestrator@mao-marketplace
+/plugin marketplace add limaronaldo/claude-toolkit
+/plugin install multi-agent-orchestrator@claude-toolkit
 ```
 
 ### Option B: Manual Installation
@@ -93,10 +93,10 @@ Inside a Claude Code session in your project:
 mkdir -p .claude/agents .claude/skills
 
 # Copy agents
-cp -r /path/to/mao-marketplace/plugins/multi-agent-orchestrator/agents/*.md .claude/agents/
+cp -r /path/to/claude-toolkit/plugins/multi-agent-orchestrator/agents/*.md .claude/agents/
 
 # Copy skill
-cp -r /path/to/mao-marketplace/plugins/multi-agent-orchestrator/skills/multi-agent-orchestrator .claude/skills/
+cp -r /path/to/claude-toolkit/plugins/multi-agent-orchestrator/skills/multi-agent-orchestrator .claude/skills/
 
 # Add orchestrator state to .gitignore
 echo ".orchestrator/" >> .gitignore
@@ -108,7 +108,7 @@ Append the MAO section to the `CLAUDE.md` that Claude Primer generated. You can 
 provided template:
 
 ```bash
-cat /path/to/mao-marketplace/plugins/multi-agent-orchestrator/skills/multi-agent-orchestrator/templates/CLAUDE-md-snippet.md >> CLAUDE.md
+cat /path/to/claude-toolkit/plugins/multi-agent-orchestrator/skills/multi-agent-orchestrator/templates/CLAUDE-md-snippet.md >> CLAUDE.md
 ```
 
 Or add manually:
@@ -250,8 +250,8 @@ Output:
 
 ```bash
 # In Claude Code session:
-/plugin marketplace add aiconnai/mao-marketplace
-/plugin install multi-agent-orchestrator@mao-marketplace
+/plugin marketplace add limaronaldo/claude-toolkit
+/plugin install multi-agent-orchestrator@claude-toolkit
 ```
 
 ### 3. Give a complex task
@@ -325,5 +325,5 @@ jobs:
 
 ## Links
 
-- **Claude Primer**: https://github.com/limaronaldo/claude-primer
-- **MAO Marketplace**: https://github.com/aiconnai/mao-marketplace
+- **Claude Primer**: https://github.com/limaronaldo/claude-toolkit/tree/main/packages/claude-primer
+- **MAO Marketplace**: https://github.com/limaronaldo/claude-toolkit

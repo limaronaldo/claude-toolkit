@@ -5,8 +5,8 @@ Thanks for your interest in contributing to MAO (Multi-Agent Orchestrator).
 ## Development Setup
 
 ```bash
-git clone https://github.com/aiconnai/mao-marketplace.git
-cd mao-marketplace
+git clone https://github.com/limaronaldo/claude-toolkit.git
+cd claude-toolkit
 ```
 
 MAO is a collection of Markdown, JSON, and Bash files — no build step required.

@@ -59,9 +59,9 @@ mao-orchestrator validate <path> # Validate a task-graph.json
 
 ## Links
 
-- [Landing Page](https://aiconnai.github.io/mao-marketplace/)
-- [GitHub](https://github.com/aiconnai/mao-marketplace)
+- [Landing Page](https://github.com/limaronaldo/claude-toolkit)
+- [GitHub](https://github.com/limaronaldo/claude-toolkit)
 
 ## License
 
-[MIT](https://github.com/aiconnai/mao-marketplace/blob/main/LICENSE)
+[MIT](https://github.com/limaronaldo/claude-toolkit/blob/main/LICENSE)

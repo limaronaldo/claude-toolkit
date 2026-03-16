@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # MAO — Multi-Agent Orchestrator installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/aiconnai/mao-marketplace/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/limaronaldo/claude-toolkit/main/packages/mao-orchestrator/install.sh | bash
 
 MAO_HOME="${MAO_HOME:-$HOME/.mao}"
-REPO="https://github.com/aiconnai/mao-marketplace.git"
+REPO="https://github.com/limaronaldo/claude-toolkit.git"
 CLAUDE_DIR="${HOME}/.claude"
 
 info()  { printf "  \033[32m✓\033[0m %s\n" "$1"; }

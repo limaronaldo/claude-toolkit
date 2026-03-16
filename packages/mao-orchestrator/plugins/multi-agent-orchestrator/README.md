@@ -9,8 +9,8 @@ tiering, git worktrees, and self-correction loops.
 
 ```bash
 # Add marketplace and install
-/plugin marketplace add aiconnai/mao-marketplace
-/plugin install multi-agent-orchestrator@mao-marketplace
+/plugin marketplace add limaronaldo/claude-toolkit
+/plugin install multi-agent-orchestrator@claude-toolkit
 ```
 
 ### Manual Installation
